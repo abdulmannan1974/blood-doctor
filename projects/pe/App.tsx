@@ -1,5 +1,11 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { motion, AnimatePresence, useScroll, useTransform, useInView } from 'framer-motion';
+import React, { useState, useEffect, useRef } from 'react';
+import {
+  motion,
+  useScroll,
+  useTransform,
+  useInView,
+  AnimatePresence,
+} from 'framer-motion';
 import {
   BedsideInvestigations,
   BloodInvestigations,
@@ -7,31 +13,46 @@ import {
   WellsScoreCalculator,
   SPESICalculator,
   InvestigationSummaryTable,
-  DiagnosticAlgorithm
+  DiagnosticAlgorithm,
 } from './components/PEInvestigations';
 import {
-  ArrowDown, Menu, X, Stethoscope, Activity,
-  ShieldCheck, HeartPulse, FlaskConical, Scan, Droplets,
-  FileText, AlertTriangle, Wind, Sparkles, ChevronRight
+  ArrowDown,
+  Menu,
+  X,
+  Stethoscope,
+  Activity,
+  ShieldCheck,
+  HeartPulse,
+  FlaskConical,
+  Scan,
+  Droplets,
+  FileText,
+  AlertTriangle,
+  Wind,
+  Sparkles,
+  GraduationCap,
+  ExternalLink,
 } from 'lucide-react';
 
-// =====================================================
-// ANIMATED SECTION WRAPPER (scroll-triggered)
-// =====================================================
-const AnimatedSection: React.FC<{
+/* ─────────────────────────────────────────────
+   REUSABLE MOTION COMPONENTS
+   ───────────────────────────────────────────── */
+
+/** Reveals children when they scroll into view */
+const SectionReveal: React.FC<{
   children: React.ReactNode;
   className?: string;
   delay?: number;
 }> = ({ children, className = '', delay = 0 }) => {
-  const ref = useRef(null);
+  const ref = useRef<HTMLDivElement>(null);
   const isInView = useInView(ref, { once: true, margin: '-80px' });
 
   return (
     <motion.div
       ref={ref}
-      initial={{ opacity: 0, y: 60 }}
-      animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 60 }}
-      transition={{ duration: 0.8, delay, ease: [0.25, 0.46, 0.45, 0.94] }}
+      initial={{ opacity: 0, y: 40 }}
+      animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 40 }}
+      transition={{ duration: 0.7, delay, ease: [0.22, 1, 0.36, 1] }}
       className={className}
     >
       {children}
@@ -39,247 +60,224 @@ const AnimatedSection: React.FC<{
   );
 };
 
-// =====================================================
-// FLOATING BLOOD CELLS (Hero background)
-// =====================================================
-const FloatingBloodCells: React.FC = () => {
-  const cells = Array.from({ length: 18 }, (_, i) => ({
-    id: i,
-    size: Math.random() * 80 + 20,
-    x: Math.random() * 100,
-    y: Math.random() * 100,
-    duration: Math.random() * 10 + 8,
-    delay: Math.random() * 5,
-    opacity: Math.random() * 0.06 + 0.02,
-  }));
+/** Staggers children animation on scroll */
+const StaggerContainer: React.FC<{
+  children: React.ReactNode;
+  className?: string;
+  stagger?: number;
+}> = ({ children, className = '', stagger = 0.08 }) => {
+  const ref = useRef<HTMLDivElement>(null);
+  const isInView = useInView(ref, { once: true, margin: '-60px' });
 
   return (
-    <div className="absolute inset-0 overflow-hidden pointer-events-none">
-      {cells.map((cell) => (
-        <motion.div
-          key={cell.id}
-          className="absolute rounded-full"
-          style={{
-            width: cell.size,
-            height: cell.size,
-            left: `${cell.x}%`,
-            top: `${cell.y}%`,
-            background: `radial-gradient(circle, rgba(220, 38, 38, ${cell.opacity * 3}), rgba(153, 27, 27, ${cell.opacity}))`,
-            filter: 'blur(1px)',
-          }}
-          animate={{
-            y: [0, -30, 0, 20, 0],
-            x: [0, 15, -10, 5, 0],
-            scale: [1, 1.1, 0.95, 1.05, 1],
-          }}
-          transition={{
-            duration: cell.duration,
-            delay: cell.delay,
-            repeat: Infinity,
-            ease: 'easeInOut',
-          }}
-        />
-      ))}
-    </div>
+    <motion.div
+      ref={ref}
+      initial="hidden"
+      animate={isInView ? 'visible' : 'hidden'}
+      variants={{
+        hidden: {},
+        visible: { transition: { staggerChildren: stagger } },
+      }}
+      className={className}
+    >
+      {children}
+    </motion.div>
   );
 };
 
-// =====================================================
-// HEARTBEAT LINE (SVG animation)
-// =====================================================
-const HeartbeatLine: React.FC = () => (
-  <div className="absolute bottom-0 left-0 right-0 h-20 overflow-hidden opacity-20">
-    <svg viewBox="0 0 1200 80" className="w-full h-full" preserveAspectRatio="none">
-      <motion.path
-        d="M0,40 L200,40 L220,40 L240,10 L260,70 L280,20 L300,60 L320,40 L500,40 L520,40 L540,10 L560,70 L580,20 L600,60 L620,40 L800,40 L820,40 L840,10 L860,70 L880,20 L900,60 L920,40 L1200,40"
-        fill="none"
-        stroke="url(#heartbeatGradient)"
-        strokeWidth="2"
-        className="pulse-line"
-      />
-      <defs>
-        <linearGradient id="heartbeatGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-          <stop offset="0%" stopColor="rgba(220, 38, 38, 0)" />
-          <stop offset="30%" stopColor="rgba(220, 38, 38, 0.8)" />
-          <stop offset="50%" stopColor="rgba(220, 38, 38, 1)" />
-          <stop offset="70%" stopColor="rgba(220, 38, 38, 0.8)" />
-          <stop offset="100%" stopColor="rgba(220, 38, 38, 0)" />
-        </linearGradient>
-      </defs>
-    </svg>
-  </div>
+const StaggerItem: React.FC<{
+  children: React.ReactNode;
+  className?: string;
+}> = ({ children, className = '' }) => (
+  <motion.div
+    variants={{
+      hidden: { opacity: 0, y: 24 },
+      visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] } },
+    }}
+    className={className}
+  >
+    {children}
+  </motion.div>
 );
 
-// =====================================================
-// SECTION HEADER COMPONENT
-// =====================================================
+/** Consistent section header with icon, label, title, and description */
 const SectionHeader: React.FC<{
   icon: React.ReactNode;
   label: string;
   title: string;
-  subtitle: string;
-  accentColor?: string;
-  light?: boolean;
-}> = ({ icon, label, title, subtitle, accentColor = 'text-red-500', light = false }) => (
-  <AnimatedSection className="text-center mb-16">
-    <motion.div
-      className={`inline-flex items-center gap-2 ${accentColor} mb-4`}
-      whileHover={{ scale: 1.05 }}
-    >
+  description: string;
+  labelColor?: string;
+  align?: 'center' | 'left';
+}> = ({ icon, label, title, description, labelColor = 'text-blood-700', align = 'center' }) => (
+  <SectionReveal className={`mb-16 ${align === 'center' ? 'text-center' : ''}`}>
+    <div className={`flex items-center gap-2 ${labelColor} mb-4 ${align === 'center' ? 'justify-center' : ''}`}>
       {icon}
-      <span className="text-[10px] font-black tracking-[0.3em] uppercase font-mono">{label}</span>
-    </motion.div>
-    <h2 className={`font-serif text-4xl md:text-5xl lg:text-6xl mb-6 font-bold ${light ? 'text-white' : 'gradient-text'}`}>
-      {title}
-    </h2>
-    <p className={`max-w-2xl mx-auto text-lg leading-relaxed ${light ? 'text-slate-400' : 'text-slate-400'}`}>
-      {subtitle}
+      <span className="text-[10px] font-black tracking-[0.25em] uppercase">{label}</span>
+    </div>
+    <h2 className="font-serif text-4xl md:text-5xl lg:text-6xl mb-6 text-slate-900 leading-[1.1]">{title}</h2>
+    <p className={`text-slate-500 text-lg leading-relaxed ${align === 'center' ? 'max-w-2xl mx-auto' : 'max-w-xl'}`}>
+      {description}
     </p>
-  </AnimatedSection>
+  </SectionReveal>
 );
 
-// =====================================================
-// NAV LINK COMPONENT
-// =====================================================
-const NavLink: React.FC<{
-  href: string;
-  label: string;
-  onClick: (e: React.MouseEvent) => void;
-  mobile?: boolean;
-}> = ({ href, label, onClick, mobile = false }) => (
-  <motion.a
-    href={href}
-    onClick={onClick}
-    className={`group relative ${mobile
-      ? 'block text-sm font-semibold text-slate-300 hover:text-white py-2'
-      : 'text-[10px] font-bold tracking-[0.2em] text-slate-400 uppercase hover:text-white'
-    } transition-colors cursor-pointer`}
-    whileHover={{ y: -1 }}
-  >
-    {label}
-    {!mobile && (
-      <span className="absolute -bottom-1 left-0 w-0 h-[2px] bg-gradient-to-r from-red-600 to-red-400 group-hover:w-full transition-all duration-300" />
-    )}
-  </motion.a>
-);
-
-// =====================================================
-// BLOOD DOCTOR LOGO
-// =====================================================
-const BloodDoctorLogo: React.FC<{ className?: string }> = ({ className = '' }) => (
-  <div className={`flex items-center gap-1.5 font-serif font-bold tracking-tight ${className}`}>
-    <span className="text-white">Blood</span>
-    <motion.div animate={{ scale: [1, 1.15, 1, 1.15, 1] }} transition={{ duration: 1.5, repeat: Infinity }}>
-      <Droplets size={20} className="text-red-500 fill-red-500" />
-    </motion.div>
-    <span className="text-red-500">Doctor</span>
+/* ─────────────────────────────────────────────
+   BLOOD DOCTOR LOGO
+   ───────────────────────────────────────────── */
+const BloodDoctorLogo: React.FC<{ className?: string; showSubtitle?: boolean }> = ({
+  className = '',
+  showSubtitle = false,
+}) => (
+  <div className={`flex items-center gap-2 ${className}`}>
+    <div className="relative">
+      <div className="w-9 h-9 bg-gradient-to-br from-blood-700 to-blood-900 rounded-lg flex items-center justify-center shadow-lg shadow-blood-900/20">
+        <Droplets size={18} className="text-white" />
+      </div>
+      <div className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-blood-500 rounded-full animate-pulse" />
+    </div>
+    <div className="flex flex-col">
+      <span className="font-serif font-bold text-lg leading-none tracking-tight">
+        <span className="text-slate-900">Blood</span>
+        <span className="text-blood-700">Doctor</span>
+      </span>
+      {showSubtitle && (
+        <span className="text-[9px] font-sans font-medium text-slate-400 tracking-wider uppercase mt-0.5">
+          PE Investigations
+        </span>
+      )}
+    </div>
   </div>
 );
 
-// =====================================================
-// MAIN APP
-// =====================================================
+/* ─────────────────────────────────────────────
+   FLOATING DECORATIVE ELEMENTS
+   ───────────────────────────────────────────── */
+const FloatingOrb: React.FC<{
+  size: string;
+  color: string;
+  position: string;
+  delay?: number;
+}> = ({ size, color, position, delay = 0 }) => (
+  <div
+    className={`absolute ${position} ${size} ${color} rounded-full blur-3xl opacity-30 pointer-events-none`}
+    style={{
+      animation: `float ${6 + delay}s ease-in-out ${delay}s infinite`,
+    }}
+  />
+);
+
+/* ─────────────────────────────────────────────
+   NAVIGATION
+   ───────────────────────────────────────────── */
+const navLinks = [
+  { id: 'algorithm', label: 'Algorithm' },
+  { id: 'bedside', label: 'Bedside' },
+  { id: 'bloods', label: 'Bloods' },
+  { id: 'imaging', label: 'Imaging' },
+  { id: 'risk', label: 'Risk Scores' },
+  { id: 'severity', label: 'Severity' },
+];
+
+/* ─────────────────────────────────────────────
+   MAIN APP COMPONENT
+   ───────────────────────────────────────────── */
 const App: React.FC = () => {
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
-  const { scrollYProgress } = useScroll();
+  const [activeSection, setActiveSection] = useState('');
+
+  // Hero parallax
   const heroRef = useRef<HTMLElement>(null);
+  const { scrollYProgress: heroProgress } = useScroll({
+    target: heroRef,
+    offset: ['start start', 'end start'],
+  });
+  const heroY = useTransform(heroProgress, [0, 1], [0, 150]);
+  const heroOpacity = useTransform(heroProgress, [0, 0.8], [1, 0]);
 
-  const heroParallaxY = useTransform(scrollYProgress, [0, 0.3], [0, -80]);
-
+  // Scroll detection for nav
   useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 50);
-    window.addEventListener('scroll', handleScroll);
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 60);
+
+      // Active section detection
+      const sections = navLinks.map((l) => l.id);
+      for (let i = sections.length - 1; i >= 0; i--) {
+        const el = document.getElementById(sections[i]);
+        if (el) {
+          const rect = el.getBoundingClientRect();
+          if (rect.top <= 120) {
+            setActiveSection(sections[i]);
+            return;
+          }
+        }
+      }
+      setActiveSection('');
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const scrollToSection = useCallback((id: string) => {
-    return (e: React.MouseEvent) => {
-      e.preventDefault();
-      setMenuOpen(false);
-      const element = document.getElementById(id);
-      if (element) {
-        const headerOffset = 80;
-        const elementPosition = element.getBoundingClientRect().top;
-        const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
-        window.scrollTo({ top: offsetPosition, behavior: 'smooth' });
-      }
-    };
-  }, []);
-
-  const navItems = [
-    { id: 'algorithm', label: 'Algorithm' },
-    { id: 'bedside', label: 'Bedside' },
-    { id: 'bloods', label: 'Bloods' },
-    { id: 'imaging', label: 'Imaging' },
-    { id: 'risk', label: 'Risk Scores' },
-    { id: 'severity', label: 'Severity' },
-  ];
+  const scrollToSection = (id: string) => (e: React.MouseEvent) => {
+    e.preventDefault();
+    setMenuOpen(false);
+    const element = document.getElementById(id);
+    if (element) {
+      const headerOffset = 90;
+      const elementPosition = element.getBoundingClientRect().top;
+      const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+      window.scrollTo({ top: offsetPosition, behavior: 'smooth' });
+    }
+  };
 
   return (
-    <div className="min-h-screen bg-med-navy text-slate-200 selection:bg-red-900/40 font-sans">
-
-      {/* ============== SCROLL PROGRESS BAR ============== */}
-      <motion.div
-        className="fixed top-0 left-0 right-0 h-[3px] bg-gradient-to-r from-red-700 via-red-500 to-amber-500 z-[100] origin-left"
-        style={{ scaleX: scrollYProgress }}
-      />
-
-      {/* ============== NAVIGATION ============== */}
-      <nav className={`fixed top-[3px] left-0 right-0 z-50 transition-all duration-500 ${
-        scrolled
-          ? 'bg-slate-950/80 backdrop-blur-xl shadow-2xl shadow-black/20 py-3'
-          : 'bg-transparent py-5'
-      }`}>
+    <div className="min-h-screen bg-med-cream text-slate-900 font-sans">
+      {/* ═══════════ NAVIGATION ═══════════ */}
+      <motion.nav
+        initial={{ y: -100 }}
+        animate={{ y: 0 }}
+        transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
+          scrolled
+            ? 'glass-panel shadow-lg shadow-slate-900/5 py-3'
+            : 'bg-transparent py-5'
+        }`}
+      >
         <div className="container mx-auto px-6 flex justify-between items-center">
-          <motion.div
-            className="flex items-center gap-3 cursor-pointer"
+          {/* Logo */}
+          <div
+            className="cursor-pointer"
             onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
           >
-            <motion.div
-              className="w-9 h-9 bg-gradient-to-br from-red-600 to-red-800 rounded-lg flex items-center justify-center text-white font-serif font-bold shadow-lg shadow-red-900/30"
-              whileHover={{ rotate: 5 }}
-            >
-              B
-            </motion.div>
-            <span className={`font-serif font-bold text-lg tracking-tight transition-all duration-300 ${
-              scrolled ? 'opacity-100' : 'opacity-0 md:opacity-100'
-            }`}>
-              <span className="text-white">Blood Doctor</span>
-              <span className="font-normal text-slate-500 ml-2 text-sm">PE Guide</span>
-            </span>
-          </motion.div>
+            <BloodDoctorLogo showSubtitle={scrolled} />
+          </div>
 
-          <div className="hidden lg:flex items-center gap-8">
-            {navItems.map((item) => (
-              <NavLink
-                key={item.id}
-                href={`#${item.id}`}
-                label={item.label}
-                onClick={scrollToSection(item.id)}
-              />
+          {/* Desktop nav links */}
+          <div className="hidden lg:flex items-center gap-1">
+            {navLinks.map((link) => (
+              <a
+                key={link.id}
+                href={`#${link.id}`}
+                onClick={scrollToSection(link.id)}
+                className={`nav-link px-3 py-2 text-[10px] font-bold tracking-[0.2em] uppercase transition-colors rounded-lg ${
+                  activeSection === link.id
+                    ? 'text-blood-700 bg-blood-50'
+                    : 'text-slate-500 hover:text-slate-900 hover:bg-slate-100'
+                }`}
+              >
+                {link.label}
+              </a>
             ))}
           </div>
 
-          <motion.button
-            className="lg:hidden text-white p-2 rounded-lg hover:bg-white/10"
+          {/* Mobile toggle */}
+          <button
+            className="lg:hidden p-2 rounded-lg hover:bg-slate-100 transition-colors text-slate-700"
             onClick={() => setMenuOpen(!menuOpen)}
-            whileTap={{ scale: 0.9 }}
+            aria-label="Toggle menu"
           >
-            <AnimatePresence mode="wait">
-              {menuOpen ? (
-                <motion.div key="close" initial={{ rotate: -90, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: 90, opacity: 0 }}>
-                  <X size={24} />
-                </motion.div>
-              ) : (
-                <motion.div key="menu" initial={{ rotate: 90, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: -90, opacity: 0 }}>
-                  <Menu size={24} />
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </motion.button>
+            {menuOpen ? <X size={22} /> : <Menu size={22} />}
+          </button>
         </div>
 
         {/* Mobile menu */}
@@ -289,424 +287,486 @@ const App: React.FC = () => {
               initial={{ height: 0, opacity: 0 }}
               animate={{ height: 'auto', opacity: 1 }}
               exit={{ height: 0, opacity: 0 }}
-              transition={{ duration: 0.3, ease: 'easeInOut' }}
-              className="lg:hidden overflow-hidden bg-slate-950/95 backdrop-blur-xl border-t border-white/5"
+              transition={{ duration: 0.3 }}
+              className="lg:hidden overflow-hidden glass-panel border-t border-slate-200/50"
             >
               <div className="px-6 py-4 space-y-1">
-                {navItems.map((item, i) => (
-                  <motion.div
-                    key={item.id}
-                    initial={{ x: -20, opacity: 0 }}
-                    animate={{ x: 0, opacity: 1 }}
-                    transition={{ delay: i * 0.05 }}
+                {navLinks.map((link) => (
+                  <a
+                    key={link.id}
+                    href={`#${link.id}`}
+                    onClick={scrollToSection(link.id)}
+                    className={`block px-4 py-3 rounded-lg text-xs font-bold uppercase tracking-[0.2em] transition-colors ${
+                      activeSection === link.id
+                        ? 'text-blood-700 bg-blood-50'
+                        : 'text-slate-600 hover:bg-slate-100'
+                    }`}
                   >
-                    <NavLink
-                      href={`#${item.id}`}
-                      label={item.label}
-                      onClick={scrollToSection(item.id)}
-                      mobile
-                    />
-                  </motion.div>
+                    {link.label}
+                  </a>
                 ))}
               </div>
             </motion.div>
           )}
         </AnimatePresence>
-      </nav>
+      </motion.nav>
 
-      {/* ============== HERO SECTION ============== */}
-      <header ref={heroRef} className="relative min-h-screen flex items-center justify-center overflow-hidden">
-        {/* Background layers */}
-        <div className="absolute inset-0 bg-gradient-to-b from-slate-950 via-med-navy to-slate-900" />
-        <div className="absolute inset-0 mesh-gradient" />
-        <FloatingBloodCells />
-        <HeartbeatLine />
+      {/* ═══════════ HERO SECTION ═══════════ */}
+      <header
+        ref={heroRef}
+        className="relative min-h-screen flex items-center justify-center overflow-hidden noise-overlay"
+      >
+        {/* Background gradient */}
+        <div className="absolute inset-0 bg-gradient-to-b from-blood-50/40 via-white to-med-cream z-0" />
 
+        {/* Floating orbs */}
+        <FloatingOrb size="w-96 h-96" color="bg-blood-200" position="top-20 -left-48" delay={0} />
+        <FloatingOrb size="w-64 h-64" color="bg-blue-200" position="top-40 -right-32" delay={2} />
+        <FloatingOrb size="w-48 h-48" color="bg-amber-200" position="bottom-32 left-1/4" delay={4} />
+
+        {/* Dot pattern */}
+        <div className="absolute inset-0 dot-pattern opacity-40 z-0" />
+
+        {/* Hero content */}
         <motion.div
-          className="relative z-10 container mx-auto px-6 text-center pt-20"
-          style={{ y: heroParallaxY }}
+          style={{ y: heroY, opacity: heroOpacity }}
+          className="relative z-10 container mx-auto px-6 text-center pt-24 pb-16"
         >
           {/* Badge */}
           <motion.div
-            className="flex flex-col items-center gap-5 mb-8"
-            initial={{ opacity: 0, y: 30 }}
+            initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.2 }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+            className="mb-8"
           >
-            <BloodDoctorLogo className="text-2xl" />
-            <motion.div
-              className="inline-flex items-center gap-2 px-5 py-2 border border-red-800/50 text-red-400 text-[10px] tracking-[0.3em] uppercase font-black rounded-full bg-red-950/30 backdrop-blur-sm"
-              whileHover={{ scale: 1.05, borderColor: 'rgba(220, 38, 38, 0.5)' }}
-            >
-              <Sparkles size={12} />
-              Clinical Investigation Guide
-            </motion.div>
+            <div className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-white/70 backdrop-blur-sm border border-slate-200/80 shadow-sm">
+              <Sparkles size={14} className="text-blood-600" />
+              <span className="text-[10px] font-black tracking-[0.3em] uppercase text-blood-700">
+                Clinical Investigation Guide
+              </span>
+            </div>
           </motion.div>
 
-          {/* Title */}
-          <motion.h1
-            className="font-serif text-5xl md:text-7xl lg:text-9xl font-bold leading-[1.05] mb-8 max-w-5xl mx-auto"
-            initial={{ opacity: 0, y: 40 }}
+          {/* Main title */}
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 1, delay: 0.4 }}
+            transition={{ duration: 0.8, delay: 0.4, ease: [0.22, 1, 0.36, 1] }}
           >
-            <span className="gradient-text-light">Pulmonary</span>
-            <br />
-            <motion.span
-              className="italic font-light gradient-text"
-              initial={{ opacity: 0, x: -30 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.8, delay: 0.8 }}
-            >
-              Embolism
-            </motion.span>
-          </motion.h1>
+            <h1 className="font-serif text-5xl sm:text-6xl md:text-7xl lg:text-[6.5rem] font-medium leading-[1.05] mb-8 text-slate-900 max-w-5xl mx-auto">
+              Pulmonary{' '}
+              <br className="hidden sm:block" />
+              <span className="italic font-light text-gradient-red">Embolism</span>
+            </h1>
+          </motion.div>
 
           {/* Subtitle */}
           <motion.p
-            className="text-slate-400 font-serif italic text-lg md:text-xl max-w-2xl mx-auto mb-10"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.8, delay: 1 }}
-          >
-            A comprehensive, evidence-based investigation checklist for the diagnosis and risk stratification of acute pulmonary embolism
-          </motion.p>
-
-          {/* Author */}
-          <motion.div
-            className="mb-14"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 1.2 }}
+            transition={{ duration: 0.7, delay: 0.6 }}
+            className="text-slate-500 font-serif italic text-lg md:text-xl max-w-2xl mx-auto mb-10 leading-relaxed"
           >
-            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-600 mb-2 font-mono">Produced for Clinical Education by</p>
-            <p className="font-serif text-2xl text-white">
-              Dr Abdul Mannan
-              <span className="text-base font-sans font-medium text-slate-500 ml-2 italic">FRCPath FCPS</span>
+            A comprehensive, evidence-based investigation checklist for the
+            diagnosis and risk stratification of acute pulmonary embolism
+          </motion.p>
+
+          {/* Author attribution */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.8 }}
+            className="mb-14"
+          >
+            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 mb-3">
+              Produced for Clinical Education by
+            </p>
+            <p className="font-serif text-2xl md:text-3xl text-slate-800">
+              Dr Abdul Mannan{' '}
+              <span className="text-sm font-sans font-medium text-slate-400 ml-1 italic">
+                FRCPath FCPS
+              </span>
             </p>
           </motion.div>
 
           {/* Quote card */}
           <motion.div
-            className="max-w-3xl mx-auto glass-panel p-8 rounded-2xl glow-red relative overflow-hidden"
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.8, delay: 1.4 }}
-            whileHover={{ scale: 1.01 }}
+            transition={{ duration: 0.7, delay: 1.0 }}
+            className="max-w-3xl mx-auto"
           >
-            <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-red-600 to-red-900" />
-            <p className="text-slate-300 leading-relaxed italic text-lg pl-4">
-              "Pulmonary embolism remains a major cause of cardiovascular morbidity and mortality. Timely, structured investigation is critical to establish the diagnosis, assess severity, and guide appropriate management."
-            </p>
+            <div className="glass-panel p-8 md:p-10 rounded-2xl shadow-xl border-l-4 border-blood-700 hover-lift">
+              <p className="text-slate-600 leading-relaxed italic text-base md:text-lg">
+                "Pulmonary embolism remains a major cause of cardiovascular morbidity
+                and mortality. Timely, structured investigation is critical to
+                establish the diagnosis, assess severity, and guide appropriate
+                management."
+              </p>
+              <p className="mt-4 text-xs font-bold text-slate-400 uppercase tracking-wider">
+                ESC/ERS Guidelines 2019
+              </p>
+            </div>
           </motion.div>
 
           {/* Scroll indicator */}
           <motion.div
-            className="mt-20 flex justify-center"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ delay: 2 }}
+            transition={{ delay: 1.4 }}
+            className="mt-16"
           >
-            <motion.a
+            <a
               href="#summary"
               onClick={scrollToSection('summary')}
-              className="group flex flex-col items-center gap-3 text-xs font-bold text-slate-500 hover:text-red-400 transition-colors cursor-pointer"
-              animate={{ y: [0, 8, 0] }}
-              transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+              className="inline-flex flex-col items-center gap-3 text-slate-400 hover:text-blood-700 transition-colors cursor-pointer group"
             >
-              <span className="tracking-[0.3em] uppercase font-mono text-[10px]">View Investigations</span>
-              <ArrowDown size={18} />
-            </motion.a>
+              <span className="text-[10px] font-black tracking-[0.3em] uppercase group-hover:tracking-[0.4em] transition-all">
+                View Investigations
+              </span>
+              <motion.div
+                animate={{ y: [0, 8, 0] }}
+                transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+              >
+                <ArrowDown size={20} />
+              </motion.div>
+            </a>
           </motion.div>
         </motion.div>
       </header>
 
+      {/* ═══════════ MAIN CONTENT ═══════════ */}
       <main>
-        {/* ============== INVESTIGATION SUMMARY TABLE ============== */}
-        <section id="summary" className="py-24 relative">
-          <div className="absolute inset-0 bg-gradient-to-b from-slate-900 via-slate-900/95 to-med-navy" />
-          <div className="section-divider absolute top-0 left-0 right-0" />
-          <div className="container mx-auto px-6 relative z-10">
+        {/* ──── Section Divider ──── */}
+        <div className="section-divider" />
+
+        {/* ──── Investigation Summary Table ──── */}
+        <section id="summary" className="py-24 md:py-32 bg-med-cream relative">
+          <div className="container mx-auto px-6">
             <SectionHeader
               icon={<FileText size={22} />}
               label="At a Glance"
               title="Investigation Summary"
-              subtitle="Complete overview of investigations required for suspected pulmonary embolism, organised by category and timing."
-              light
+              description="Complete overview of investigations required for suspected pulmonary embolism, organised by category and timing."
+              labelColor="text-blood-700"
             />
-            <AnimatedSection delay={0.2}>
-              <div className="glass-panel rounded-2xl p-6 glow-red overflow-hidden">
+            <SectionReveal delay={0.15}>
+              <div className="bg-white rounded-2xl border border-slate-200 shadow-lg shadow-slate-900/5 p-4 md:p-8 hover-lift">
                 <InvestigationSummaryTable />
               </div>
-            </AnimatedSection>
+            </SectionReveal>
           </div>
         </section>
 
-        {/* ============== DIAGNOSTIC ALGORITHM ============== */}
-        <section id="algorithm" className="py-24 relative overflow-hidden">
-          <div className="absolute inset-0 bg-med-navy mesh-gradient" />
-          <div className="section-divider absolute top-0 left-0 right-0" />
-          <div className="container mx-auto px-6 relative z-10">
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-16">
+        <div className="section-divider" />
+
+        {/* ──── Diagnostic Algorithm ──── */}
+        <section id="algorithm" className="py-24 md:py-32 bg-white relative">
+          <div className="container mx-auto px-6">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-16 items-start">
+              {/* Left description */}
               <div className="lg:col-span-4">
-                <AnimatedSection>
-                  <div className="flex items-center gap-2 text-red-500 mb-4">
-                    <Wind size={22} />
-                    <span className="text-[10px] font-black tracking-[0.3em] uppercase font-mono">Diagnostic Pathway</span>
-                  </div>
-                  <h2 className="font-serif text-4xl md:text-5xl mb-8 leading-tight font-bold gradient-text-light">
-                    Clinical Algorithm
-                  </h2>
-                  <div className="space-y-6 text-slate-400 leading-relaxed text-lg">
-                    <p>
-                      The diagnostic approach to PE follows a structured algorithm based on clinical probability assessment, biomarker testing, and definitive imaging.
+                <SectionHeader
+                  icon={<Wind size={22} />}
+                  label="Diagnostic Pathway"
+                  title="Clinical Algorithm"
+                  description="The diagnostic approach to PE follows a structured algorithm based on clinical probability assessment, biomarker testing, and definitive imaging."
+                  labelColor="text-blood-700"
+                  align="left"
+                />
+                <SectionReveal delay={0.2}>
+                  <div className="space-y-6">
+                    <p className="text-slate-500 text-base leading-relaxed">
+                      This evidence-based pathway minimises unnecessary imaging
+                      while ensuring high-risk patients receive timely definitive
+                      investigation.
                     </p>
-                    <p>
-                      This evidence-based pathway minimises unnecessary imaging while ensuring high-risk patients receive timely definitive investigation.
-                    </p>
-                    <motion.div
-                      className="p-5 glass-panel rounded-xl border-l-2 border-red-600"
-                      whileHover={{ x: 4 }}
-                    >
-                      <h4 className="font-bold text-white mb-2 flex items-center gap-2 text-sm">
-                        <AlertTriangle size={16} className="text-red-500" />
+                    <div className="p-5 bg-gradient-to-br from-red-50 to-amber-50 border border-red-200/50 rounded-xl">
+                      <h4 className="font-bold text-slate-900 mb-2 flex items-center gap-2 text-sm">
+                        <AlertTriangle size={16} className="text-blood-700" />
                         Haemodynamic Instability
                       </h4>
-                      <p className="text-sm text-slate-400">
-                        If the patient is haemodynamically unstable (SBP &lt;90 mmHg), proceed directly to bedside echo and consider empirical thrombolysis. Do not delay for CTPA.
+                      <p className="text-xs text-slate-600 leading-relaxed">
+                        If the patient is haemodynamically unstable (SBP &lt;90 mmHg),
+                        proceed directly to bedside echo and consider empirical
+                        thrombolysis. Do not delay for CTPA.
                       </p>
-                    </motion.div>
+                    </div>
                   </div>
-                </AnimatedSection>
+                </SectionReveal>
               </div>
+
+              {/* Right algorithm */}
               <div className="lg:col-span-8">
-                <AnimatedSection delay={0.2}>
+                <SectionReveal delay={0.3}>
                   <DiagnosticAlgorithm />
-                </AnimatedSection>
+                </SectionReveal>
               </div>
             </div>
           </div>
         </section>
 
-        {/* ============== BEDSIDE INVESTIGATIONS ============== */}
-        <section id="bedside" className="py-24 relative">
-          <div className="absolute inset-0 bg-gradient-to-b from-med-navy via-slate-900 to-med-navy" />
-          <div className="section-divider absolute top-0 left-0 right-0" />
-          <div className="container mx-auto px-6 relative z-10">
+        <div className="section-divider" />
+
+        {/* ──── Bedside Investigations ──── */}
+        <section id="bedside" className="py-24 md:py-32 bg-med-cream relative">
+          <div className="container mx-auto px-6">
             <SectionHeader
               icon={<Stethoscope size={22} />}
               label="Immediate Assessment"
               title="Bedside Investigations"
-              subtitle="Investigations performed at the bedside immediately upon clinical suspicion of PE. These guide initial management and haemodynamic assessment."
-              accentColor="text-amber-500"
-              light
+              description="Investigations performed at the bedside immediately upon clinical suspicion of PE. These guide initial management and haemodynamic assessment."
+              labelColor="text-med-blue"
             />
-            <AnimatedSection delay={0.2}>
+            <SectionReveal delay={0.15}>
               <div className="max-w-4xl mx-auto">
                 <BedsideInvestigations />
               </div>
-            </AnimatedSection>
+            </SectionReveal>
           </div>
         </section>
 
-        {/* ============== BLOOD INVESTIGATIONS ============== */}
-        <section id="bloods" className="py-24 relative">
-          <div className="absolute inset-0 bg-med-navy mesh-gradient" />
-          <div className="section-divider absolute top-0 left-0 right-0" />
-          <div className="container mx-auto px-6 relative z-10">
+        <div className="section-divider" />
+
+        {/* ──── Blood Investigations ──── */}
+        <section id="bloods" className="py-24 md:py-32 bg-white relative">
+          <div className="container mx-auto px-6">
             <SectionHeader
               icon={<FlaskConical size={22} />}
               label="Laboratory"
               title="Blood Investigations"
-              subtitle="Laboratory investigations for diagnosis, risk stratification, and safe initiation of anticoagulation therapy."
-              light
+              description="Laboratory investigations for diagnosis, risk stratification, and safe initiation of anticoagulation therapy."
+              labelColor="text-blood-700"
             />
-            <AnimatedSection delay={0.2}>
+            <SectionReveal delay={0.15}>
               <div className="max-w-4xl mx-auto">
                 <BloodInvestigations />
               </div>
-            </AnimatedSection>
+            </SectionReveal>
           </div>
         </section>
 
-        {/* ============== IMAGING INVESTIGATIONS ============== */}
-        <section id="imaging" className="py-24 relative">
-          <div className="absolute inset-0 bg-gradient-to-b from-med-navy via-slate-900 to-med-navy" />
-          <div className="section-divider absolute top-0 left-0 right-0" />
-          <div className="container mx-auto px-6 relative z-10">
+        <div className="section-divider" />
+
+        {/* ──── Imaging Investigations ──── */}
+        <section id="imaging" className="py-24 md:py-32 bg-med-cream relative">
+          <div className="container mx-auto px-6">
             <SectionHeader
               icon={<Scan size={22} />}
               label="Radiology & Imaging"
               title="Imaging Investigations"
-              subtitle="Imaging modalities used for confirming PE, assessing right ventricular function, and identifying concurrent DVT."
-              accentColor="text-blue-400"
-              light
+              description="Imaging modalities used for confirming PE, assessing right ventricular function, and identifying concurrent DVT."
+              labelColor="text-med-blue"
             />
-            <AnimatedSection delay={0.2}>
+            <SectionReveal delay={0.15}>
               <div className="max-w-4xl mx-auto">
                 <ImagingInvestigations />
               </div>
-            </AnimatedSection>
+            </SectionReveal>
           </div>
         </section>
 
-        {/* ============== WELLS SCORE ============== */}
-        <section id="risk" className="py-24 relative overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-br from-slate-950 via-red-950/20 to-slate-950" />
-          <div className="section-divider absolute top-0 left-0 right-0" />
+        <div className="section-divider" />
+
+        {/* ──── Wells Score (Dark Section) ──── */}
+        <section
+          id="risk"
+          className="py-24 md:py-32 bg-gradient-to-br from-slate-900 via-slate-800 to-med-dark text-white relative overflow-hidden noise-overlay"
+        >
+          {/* Decorative background elements */}
+          <div className="absolute top-0 right-0 w-96 h-96 bg-blood-900/20 rounded-full blur-3xl pointer-events-none" />
+          <div className="absolute bottom-0 left-0 w-64 h-64 bg-amber-900/10 rounded-full blur-3xl pointer-events-none" />
+
           <div className="container mx-auto px-6 relative z-10">
             <div className="max-w-4xl mx-auto">
-              <SectionHeader
-                icon={<ShieldCheck size={22} />}
-                label="Clinical Decision Rules"
-                title="Pre-Test Probability"
-                subtitle="Validated scoring systems to estimate the probability of PE before definitive investigation. Determines whether D-dimer testing or direct imaging is appropriate."
-                accentColor="text-amber-400"
-                light
-              />
-              <AnimatedSection delay={0.2}>
+              <SectionReveal>
+                <div className="text-center mb-16">
+                  <div className="flex items-center gap-2 text-med-gold mb-4 justify-center">
+                    <ShieldCheck size={22} />
+                    <span className="text-[10px] font-black tracking-[0.25em] uppercase">
+                      Clinical Decision Rules
+                    </span>
+                  </div>
+                  <h2 className="font-serif text-4xl md:text-5xl lg:text-6xl mb-6 leading-[1.1]">
+                    Pre-Test Probability
+                  </h2>
+                  <p className="text-slate-400 max-w-2xl mx-auto text-lg leading-relaxed">
+                    Validated scoring systems to estimate the probability of PE
+                    before definitive investigation. Determines whether D-dimer
+                    testing or direct imaging is appropriate.
+                  </p>
+                </div>
+              </SectionReveal>
+              <SectionReveal delay={0.2}>
                 <WellsScoreCalculator />
-              </AnimatedSection>
+              </SectionReveal>
             </div>
           </div>
         </section>
 
-        {/* ============== sPESI SEVERITY ============== */}
-        <section id="severity" className="py-24 relative">
-          <div className="absolute inset-0 bg-med-navy mesh-gradient" />
-          <div className="section-divider absolute top-0 left-0 right-0" />
-          <div className="container mx-auto px-6 relative z-10">
+        {/* ──── sPESI Severity ──── */}
+        <section id="severity" className="py-24 md:py-32 bg-white relative">
+          <div className="container mx-auto px-6">
             <div className="max-w-4xl mx-auto">
               <SectionHeader
                 icon={<Activity size={22} />}
                 label="Risk Stratification"
                 title="Severity Assessment"
-                subtitle="Once PE is confirmed, the sPESI score stratifies patients into low and high risk categories, guiding inpatient vs outpatient management decisions."
-                light
+                description="Once PE is confirmed, the sPESI score stratifies patients into low and high risk categories, guiding inpatient vs outpatient management decisions."
+                labelColor="text-blood-700"
               />
-              <AnimatedSection delay={0.2}>
-                <SPESICalculator />
-              </AnimatedSection>
 
-              <AnimatedSection delay={0.4}>
-                <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-6">
-                  {[
-                    {
-                      title: 'Low Risk PE',
-                      description: 'sPESI = 0. Consider early discharge and outpatient management with DOAC. Hestia criteria should also be assessed.',
-                      gradient: 'from-emerald-900/40 to-emerald-950/40',
-                      border: 'border-emerald-700/30',
-                      textColor: 'text-emerald-400',
-                      descColor: 'text-emerald-300/70'
-                    },
-                    {
-                      title: 'Submassive PE',
-                      description: 'Haemodynamically stable but with RV dysfunction (echo/CT) and/or elevated troponin. Monitor closely; consider escalation if deterioration.',
-                      gradient: 'from-amber-900/40 to-amber-950/40',
-                      border: 'border-amber-700/30',
-                      textColor: 'text-amber-400',
-                      descColor: 'text-amber-300/70'
-                    },
-                    {
-                      title: 'Massive PE',
-                      description: 'Haemodynamic instability (SBP <90 mmHg). Requires immediate resuscitation, anticoagulation, and consideration of systemic thrombolysis or surgical/interventional thrombectomy.',
-                      gradient: 'from-red-900/40 to-red-950/40',
-                      border: 'border-red-700/30',
-                      textColor: 'text-red-400',
-                      descColor: 'text-red-300/70'
-                    }
-                  ].map((card, i) => (
-                    <motion.div
-                      key={card.title}
-                      className={`p-6 bg-gradient-to-br ${card.gradient} border ${card.border} rounded-2xl card-hover`}
-                      whileHover={{ scale: 1.02, y: -4 }}
-                    >
-                      <h4 className={`font-bold ${card.textColor} text-sm mb-3`}>{card.title}</h4>
-                      <p className={`text-xs ${card.descColor} leading-relaxed`}>{card.description}</p>
-                    </motion.div>
-                  ))}
-                </div>
-              </AnimatedSection>
+              <SectionReveal delay={0.15}>
+                <SPESICalculator />
+              </SectionReveal>
+
+              {/* Severity classification cards */}
+              <StaggerContainer className="mt-14 grid grid-cols-1 md:grid-cols-3 gap-6" stagger={0.1}>
+                <StaggerItem>
+                  <div className="p-6 bg-gradient-to-br from-emerald-50 to-green-50 border border-emerald-200/60 rounded-2xl hover-lift h-full">
+                    <div className="w-10 h-10 bg-emerald-100 rounded-xl flex items-center justify-center mb-4">
+                      <ShieldCheck size={20} className="text-emerald-600" />
+                    </div>
+                    <h4 className="font-bold text-emerald-900 text-sm mb-2">Low Risk PE</h4>
+                    <p className="text-xs text-emerald-700 leading-relaxed">
+                      sPESI = 0. Consider early discharge and outpatient management
+                      with DOAC. Hestia criteria should also be assessed.
+                    </p>
+                  </div>
+                </StaggerItem>
+                <StaggerItem>
+                  <div className="p-6 bg-gradient-to-br from-amber-50 to-yellow-50 border border-amber-200/60 rounded-2xl hover-lift h-full">
+                    <div className="w-10 h-10 bg-amber-100 rounded-xl flex items-center justify-center mb-4">
+                      <AlertTriangle size={20} className="text-amber-600" />
+                    </div>
+                    <h4 className="font-bold text-amber-900 text-sm mb-2">Submassive PE</h4>
+                    <p className="text-xs text-amber-700 leading-relaxed">
+                      Haemodynamically stable but with RV dysfunction (echo/CT) and/or
+                      elevated troponin. Monitor closely; consider escalation if
+                      deterioration.
+                    </p>
+                  </div>
+                </StaggerItem>
+                <StaggerItem>
+                  <div className="p-6 bg-gradient-to-br from-red-50 to-rose-50 border border-red-200/60 rounded-2xl hover-lift h-full">
+                    <div className="w-10 h-10 bg-red-100 rounded-xl flex items-center justify-center mb-4">
+                      <HeartPulse size={20} className="text-red-600" />
+                    </div>
+                    <h4 className="font-bold text-red-900 text-sm mb-2">Massive PE</h4>
+                    <p className="text-xs text-red-700 leading-relaxed">
+                      Haemodynamic instability (SBP &lt;90 mmHg). Requires immediate
+                      resuscitation, anticoagulation, and consideration of systemic
+                      thrombolysis or surgical/interventional thrombectomy.
+                    </p>
+                  </div>
+                </StaggerItem>
+              </StaggerContainer>
             </div>
           </div>
         </section>
 
-        {/* ============== ACKNOWLEDGEMENT ============== */}
-        <section id="authors" className="py-24 relative">
-          <div className="absolute inset-0 bg-gradient-to-b from-med-navy to-slate-950" />
-          <div className="section-divider absolute top-0 left-0 right-0" />
-          <div className="container mx-auto px-6 relative z-10 text-center">
-            <AnimatedSection>
+        <div className="section-divider" />
+
+        {/* ──── Acknowledgement ──── */}
+        <section id="authors" className="py-24 md:py-32 bg-med-cream relative overflow-hidden">
+          <div className="absolute inset-0 dot-pattern opacity-30" />
+          <div className="container mx-auto px-6 relative z-10">
+            <SectionReveal className="text-center">
               <div className="flex flex-col items-center mb-12">
-                <BloodDoctorLogo className="text-3xl mb-6" />
-                <h3 className="font-serif text-3xl md:text-4xl gradient-text-light font-bold">Production Acknowledgement</h3>
-                <div className="mt-6 max-w-xl text-slate-400 italic text-lg">
+                <div className="w-16 h-16 bg-gradient-to-br from-blood-700 to-blood-900 rounded-2xl flex items-center justify-center shadow-xl shadow-blood-900/20 mb-6">
+                  <GraduationCap size={28} className="text-white" />
+                </div>
+                <h3 className="font-serif text-3xl md:text-4xl text-slate-900 mb-2">
+                  Production Acknowledgement
+                </h3>
+                <div className="mt-4 max-w-xl text-slate-500 italic">
                   This educational clinical resource was produced and curated by:
-                  <motion.div
-                    className="mt-4 font-serif text-3xl text-white not-italic"
-                    whileHover={{ scale: 1.02 }}
-                  >
-                    Dr Abdul Mannan
-                    <span className="text-base font-sans font-medium text-slate-500 ml-2 italic">FRCPath FCPS</span>
-                  </motion.div>
+                  <div className="mt-4 font-serif text-2xl md:text-3xl text-slate-800 not-italic">
+                    Dr Abdul Mannan{' '}
+                    <span className="text-sm font-sans font-medium text-slate-400 ml-1 italic">
+                      FRCPath FCPS
+                    </span>
+                  </div>
                 </div>
               </div>
-            </AnimatedSection>
+            </SectionReveal>
 
-            <div className="h-px w-24 bg-gradient-to-r from-transparent via-red-800/50 to-transparent mx-auto mb-16" />
+            <div className="section-divider max-w-24 mx-auto mb-16" />
 
-            <AnimatedSection delay={0.2}>
-              <div className="max-w-2xl mx-auto p-8 glass-panel rounded-2xl glow-red">
-                <p className="text-slate-400 text-sm italic leading-relaxed">
-                  This investigation guide is based on current ESC/ERS guidelines for the diagnosis and management of acute pulmonary embolism, NICE guidelines, and BTS recommendations. For educational use in clinical haematology and acute medicine.
+            <SectionReveal delay={0.2}>
+              <div className="max-w-2xl mx-auto glass-panel p-8 md:p-10 rounded-2xl shadow-lg hover-lift">
+                <p className="text-slate-500 text-sm italic leading-relaxed">
+                  This investigation guide is based on current ESC/ERS guidelines
+                  for the diagnosis and management of acute pulmonary embolism, NICE
+                  guidelines, and BTS recommendations. For educational use in
+                  clinical haematology and acute medicine.
                 </p>
-                <div className="mt-6 pt-6 border-t border-white/5 flex flex-col items-center gap-3">
-                  <span className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-600 font-mono">Digital Resource by Blood Doctor</span>
-                  <BloodDoctorLogo className="scale-75 opacity-40" />
+                <div className="mt-6 pt-6 border-t border-slate-200/50 flex flex-col items-center gap-3">
+                  <span className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">
+                    Digital Resource by Blood Doctor
+                  </span>
+                  <BloodDoctorLogo className="opacity-60" />
                 </div>
               </div>
-            </AnimatedSection>
+            </SectionReveal>
           </div>
         </section>
       </main>
 
-      {/* ============== FOOTER ============== */}
-      <footer className="relative py-16 overflow-hidden">
-        <div className="absolute inset-0 bg-slate-950" />
-        <div className="section-divider absolute top-0 left-0 right-0" />
-        <div className="container mx-auto px-6 relative z-10">
-          <div className="flex flex-col md:flex-row justify-between items-center gap-8">
-            <motion.div
-              className="text-center md:text-left"
-              whileHover={{ x: 4 }}
-            >
-              <div className="text-white font-serif font-bold text-2xl mb-2 flex items-center gap-3">
-                <motion.div animate={{ scale: [1, 1.2, 1] }} transition={{ duration: 1.5, repeat: Infinity }}>
-                  <HeartPulse className="text-red-500" size={28} />
-                </motion.div>
-                Blood Doctor
+      {/* ═══════════ FOOTER ═══════════ */}
+      <footer className="relative bg-gradient-to-b from-slate-900 to-slate-950 text-slate-400 overflow-hidden">
+        {/* Top gradient line */}
+        <div className="h-px bg-gradient-to-r from-transparent via-blood-700 to-transparent" />
+
+        <div className="container mx-auto px-6 py-16">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-12 items-center">
+            {/* Logo and tagline */}
+            <div className="text-center md:text-left">
+              <div className="flex items-center gap-3 justify-center md:justify-start mb-3">
+                <div className="w-10 h-10 bg-gradient-to-br from-blood-700 to-blood-900 rounded-xl flex items-center justify-center shadow-lg">
+                  <HeartPulse size={20} className="text-white" />
+                </div>
+                <span className="font-serif font-bold text-xl text-white">
+                  Blood<span className="text-blood-400">Doctor</span>
+                </span>
               </div>
-              <p className="text-xs text-slate-500 font-mono">PE Investigation Guide</p>
-            </motion.div>
-            <div className="text-center">
-              <p className="text-slate-300 font-serif text-lg">Dr Abdul Mannan</p>
-              <p className="text-[10px] uppercase tracking-[0.2em] text-slate-600 font-mono">FRCPath FCPS</p>
+              <p className="text-xs text-slate-500 leading-relaxed">
+                Evidence-based clinical education<br />for haematology & acute medicine
+              </p>
             </div>
-            <div className="flex gap-8 text-[10px] font-bold tracking-[0.15em] uppercase text-slate-600">
-              {['Privacy Policy', 'Terms of Use', 'Medical Disclaimer'].map((link) => (
-                <motion.a
-                  key={link}
-                  href="#"
-                  className="hover:text-red-400 transition-colors"
-                  whileHover={{ y: -2 }}
-                >
-                  {link}
-                </motion.a>
-              ))}
+
+            {/* Author */}
+            <div className="text-center">
+              <p className="text-slate-300 font-serif text-lg mb-1">Dr Abdul Mannan</p>
+              <p className="text-[10px] uppercase tracking-[0.3em] text-slate-500">
+                FRCPath FCPS
+              </p>
+            </div>
+
+            {/* Links */}
+            <div className="flex flex-wrap gap-6 justify-center md:justify-end text-[10px] font-bold tracking-[0.2em] uppercase">
+              <a href="#" className="hover:text-white transition-colors">
+                Privacy
+              </a>
+              <a href="#" className="hover:text-white transition-colors">
+                Terms
+              </a>
+              <a href="#" className="hover:text-white transition-colors">
+                Disclaimer
+              </a>
             </div>
           </div>
-          <div className="text-center mt-12 text-[9px] text-slate-800 uppercase tracking-[0.3em] font-mono">
-            &copy; 2025 Blood Doctor by Dr Abdul Mannan. For medical educational use only.
+        </div>
+
+        {/* Bottom bar */}
+        <div className="border-t border-slate-800/50">
+          <div className="container mx-auto px-6 py-5 flex flex-col sm:flex-row justify-between items-center gap-4">
+            <p className="text-[9px] text-slate-600 uppercase tracking-[0.3em]">
+              &copy; 2025 Blood Doctor by Dr Abdul Mannan. For medical educational use only.
+            </p>
+            <p className="text-[9px] text-slate-700 uppercase tracking-[0.2em]">
+              #BloodDoctor
+            </p>
           </div>
         </div>
       </footer>
