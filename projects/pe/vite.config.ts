@@ -3,6 +3,7 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
 export default defineConfig({
+  base: '/blood-doctor/',
   server: {
     port: 3001,
     host: '0.0.0.0',
@@ -12,5 +13,9 @@ export default defineConfig({
     alias: {
       '@': path.resolve(__dirname, '.'),
     }
+  },
+  build: {
+    outDir: '../../docs',
+    emptyOutDir: true,
   }
 });
