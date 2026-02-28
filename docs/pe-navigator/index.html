@@ -1,0 +1,1445 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🩸 PE Guideline Navigator — Blood Doctor</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700;800;900&family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+    :root {
+      --medical-red: #991b1b;
+      --deep-red: #7f1d1d;
+      --bright-red: #dc2626;
+      --dark-slate: #0f172a;
+      --slate-800: #1e293b;
+      --cream: #f8fafc;
+      --gold: #b45309;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; scroll-padding-top: 100px; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--cream);
+      color: #1e293b;
+      min-height: 100vh;
+      position: relative;
+      overflow-x: hidden;
+    }
+
+    /* Dot pattern background */
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background-image: radial-gradient(circle, rgba(153,27,27,0.07) 1px, transparent 1px);
+      background-size: 24px 24px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* Noise texture overlay */
+    body::after {
+      content: '';
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.015'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .content-wrapper { position: relative; z-index: 1; }
+
+    /* Glass morphism panels */
+    .glass-panel {
+      background: rgba(255,255,255,0.8);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255,255,255,0.9);
+      border-radius: 20px;
+      box-shadow: 0 4px 24px -4px rgba(0,0,0,0.06);
+    }
+
+    .glass-panel-light {
+      background: rgba(255,255,255,0.85);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255,255,255,0.9);
+      border-radius: 20px;
+      color: #1e293b;
+    }
+
+    /* Accent panel */
+    .dark-panel {
+      background: rgba(255,255,255,0.7);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(153,27,27,0.1);
+      border-radius: 20px;
+      box-shadow: 0 4px 24px -4px rgba(0,0,0,0.05);
+    }
+
+    /* Gradient text */
+    .text-gradient-red {
+      background: linear-gradient(135deg, #991b1b, #dc2626);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .text-gradient-gold {
+      background: linear-gradient(135deg, #b45309, #d97706);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    /* Heading font */
+    .font-display { font-family: 'Playfair Display', serif; }
+
+    /* Section divider */
+    .section-divider {
+      height: 1px;
+      background: linear-gradient(90deg, transparent, #991b1b, transparent);
+      margin: 2rem 0;
+    }
+
+    /* Hover lift effect */
+    .hover-lift {
+      transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.4s ease;
+    }
+    .hover-lift:hover {
+      transform: translateY(-6px);
+      box-shadow: 0 20px 40px -12px rgba(153,27,27,0.3);
+    }
+
+    /* Tab navigation */
+    .tab-btn {
+      transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+      position: relative;
+      overflow: hidden;
+    }
+    .tab-btn::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: linear-gradient(135deg, #991b1b, #dc2626);
+      opacity: 0;
+      transition: opacity 0.3s ease;
+      border-radius: inherit;
+    }
+    .tab-btn.active::before { opacity: 1; }
+    .tab-btn.active {
+      color: #fff;
+      box-shadow: 0 4px 20px -4px rgba(153,27,27,0.4);
+    }
+    .tab-btn:not(.active) { color: #475569; }
+    .tab-btn:not(.active):hover { color: #1e293b; background: rgba(153,27,27,0.06); }
+    .tab-btn span { position: relative; z-index: 1; }
+
+    /* Animations */
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(16px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-8px); }
+    }
+    @keyframes pulseGlow {
+      0%, 100% { box-shadow: 0 0 20px rgba(153,27,27,0.2); }
+      50% { box-shadow: 0 0 40px rgba(153,27,27,0.4); }
+    }
+    @keyframes shimmer {
+      0% { background-position: -200% center; }
+      100% { background-position: 200% center; }
+    }
+    @keyframes breathe {
+      0%, 100% { opacity: 0.7; }
+      50% { opacity: 1; }
+    }
+
+    .fade-in { animation: fadeInUp 0.4s ease forwards; }
+    .float-anim { animation: float 6s ease-in-out infinite; }
+    .pulse-glow { animation: pulseGlow 3s ease-in-out infinite; }
+
+    /* Table styles */
+    .tbl { width: 100%; border-collapse: separate; border-spacing: 0; font-size: .8rem; }
+    .tbl th {
+      background: linear-gradient(135deg, #991b1b, #7f1d1d);
+      color: #fff;
+      padding: 12px 14px;
+      text-align: left;
+      font-weight: 600;
+      position: sticky;
+      top: 0;
+      z-index: 2;
+      font-family: 'Inter', sans-serif;
+      letter-spacing: 0.02em;
+    }
+    .tbl th:first-child { border-radius: 12px 0 0 0; }
+    .tbl th:last-child { border-radius: 0 12px 0 0; }
+    .tbl td {
+      padding: 10px 14px;
+      border-bottom: 1px solid rgba(0,0,0,0.06);
+      vertical-align: top;
+      line-height: 1.5;
+      color: #334155;
+    }
+    .tbl tr:last-child td:first-child { border-radius: 0 0 0 12px; }
+    .tbl tr:last-child td:last-child { border-radius: 0 0 12px 0; }
+    .tbl tr:hover td { background: rgba(153,27,27,0.05); }
+    .tbl tr:nth-child(even) td { background: rgba(0,0,0,0.02); }
+    .tbl tr:nth-child(even):hover td { background: rgba(153,27,27,0.05); }
+    .tbl td.font-semibold { color: #1e293b; }
+
+    /* Badges */
+    .badge { display: inline-block; padding: 2px 8px; border-radius: 9999px; font-size: .68rem; font-weight: 600; }
+    .badge-green { background: rgba(22,163,74,0.1); color: #15803d; border: 1px solid rgba(22,163,74,0.25); }
+    .badge-amber { background: rgba(217,119,6,0.1); color: #b45309; border: 1px solid rgba(217,119,6,0.25); }
+    .badge-red { background: rgba(220,38,38,0.1); color: #b91c1c; border: 1px solid rgba(220,38,38,0.25); }
+    .badge-blue { background: rgba(37,99,235,0.1); color: #1d4ed8; border: 1px solid rgba(37,99,235,0.25); }
+    .badge-gray { background: rgba(100,116,139,0.1); color: #475569; border: 1px solid rgba(100,116,139,0.25); }
+    .badge-purple { background: rgba(124,58,237,0.1); color: #6d28d9; border: 1px solid rgba(124,58,237,0.25); }
+
+    /* Mermaid diagrams */
+    .mermaid { background: rgba(255,255,255,0.95); border-radius: 16px; padding: 20px; overflow-x: auto; color: #1e293b; }
+
+    /* Section card */
+    .section-card {
+      background: rgba(255,255,255,0.7);
+      border-radius: 20px;
+      border: 1px solid rgba(0,0,0,0.06);
+      padding: 28px;
+      margin-bottom: 24px;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      box-shadow: 0 2px 12px -2px rgba(0,0,0,0.04);
+    }
+
+    /* Abbreviation grid */
+    .abbr-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 8px; }
+    .abbr-item {
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+      padding: 8px 14px;
+      border-radius: 10px;
+      background: rgba(255,255,255,0.6);
+      border: 1px solid rgba(0,0,0,0.06);
+      font-size: .82rem;
+      transition: all 0.2s ease;
+    }
+    .abbr-item:hover { background: rgba(153,27,27,0.08); border-color: rgba(153,27,27,0.2); }
+    .abbr-item strong { color: #b91c1c; min-width: 75px; font-weight: 700; }
+
+    /* Lifestyle cards */
+    .lifestyle-card {
+      background: rgba(255,255,255,0.6);
+      border: 1px solid rgba(0,0,0,0.06);
+      border-radius: 16px;
+      padding: 20px;
+      backdrop-filter: blur(10px);
+      transition: all 0.3s ease;
+      box-shadow: 0 2px 8px -2px rgba(0,0,0,0.04);
+    }
+    .lifestyle-card:hover { border-color: rgba(153,27,27,0.3); }
+
+    .scroll-table { overflow-x: auto; -webkit-overflow-scrolling: touch; border-radius: 12px; }
+
+    /* Custom scrollbar */
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track { background: rgba(241,245,249,0.8); border-radius: 4px; }
+    ::-webkit-scrollbar-thumb { background: #991b1b; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #dc2626; }
+
+    /* Branding bar */
+    .branding-bar {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      font-size: 0.9rem;
+      font-weight: 500;
+      letter-spacing: 0.02em;
+    }
+    .branding-bar .name-text { color: #1e293b; font-weight: 600; }
+    .branding-bar .quals { color: #64748b; font-weight: 400; font-size: 0.8rem; }
+    .branding-bar .brand-name { font-weight: 800; font-size: 1rem; letter-spacing: 0.04em; }
+    .branding-bar .brand-blood { color: #1e293b; }
+    .branding-bar .brand-doctor { color: #1e293b; }
+    .branding-bar .brand-sep { color: rgba(153,27,27,0.4); margin: 0 4px; }
+    .branding-bar .email-link { color: #64748b; font-size: 0.78rem; font-weight: 400; text-decoration: underline; text-underline-offset: 2px; }
+    .branding-bar .email-link:hover { color: #dc2626; }
+
+    /* ═══ Tailwind Utility Overrides for Light Theme ═══ */
+    /* Remap dark-theme text utilities to light-theme equivalents */
+    .text-slate-200 { color: #1e293b !important; }
+    .text-slate-300 { color: #334155 !important; }
+    .text-slate-400 { color: #64748b !important; }
+    .text-slate-500 { color: #64748b !important; }
+    .text-slate-600 { color: #475569 !important; }
+    .hover\:text-slate-200:hover { color: #1e293b !important; }
+    .hover\:text-slate-100:hover { color: #0f172a !important; }
+    /* Map bright accent colors to darker equivalents for light backgrounds */
+    .text-emerald-400 { color: #059669 !important; }
+    .text-emerald-300 { color: #059669 !important; }
+    .text-amber-400 { color: #b45309 !important; }
+    .text-amber-300 { color: #b45309 !important; }
+    .text-red-400 { color: #b91c1c !important; }
+    .text-red-300 { color: #b91c1c !important; }
+    .text-blue-400 { color: #1d4ed8 !important; }
+    .text-blue-300 { color: #1d4ed8 !important; }
+    .text-purple-400 { color: #6d28d9 !important; }
+    .text-purple-300 { color: #6d28d9 !important; }
+    .text-cyan-400 { color: #0891b2 !important; }
+    .text-cyan-300 { color: #0891b2 !important; }
+    .text-rose-400 { color: #be123c !important; }
+    .text-rose-300 { color: #be123c !important; }
+    .text-indigo-400 { color: #4338ca !important; }
+    .text-teal-400 { color: #0d9488 !important; }
+    .text-orange-400 { color: #c2410c !important; }
+    .text-yellow-400 { color: #a16207 !important; }
+    .text-lime-400 { color: #4d7c0f !important; }
+    .text-pink-400 { color: #be185d !important; }
+    /* Background overrides */
+    .bg-emerald-400\/10 { background-color: rgba(5,150,105,0.08) !important; }
+    .bg-amber-400\/10 { background-color: rgba(180,83,9,0.08) !important; }
+    .bg-red-400\/10 { background-color: rgba(185,28,28,0.08) !important; }
+    .bg-blue-400\/10 { background-color: rgba(29,78,216,0.08) !important; }
+    .bg-purple-400\/10 { background-color: rgba(109,40,217,0.08) !important; }
+    .bg-rose-500\/10 { background-color: rgba(190,18,60,0.08) !important; }
+    .bg-cyan-400\/10 { background-color: rgba(8,145,178,0.08) !important; }
+    /* Border overrides for light backgrounds */
+    .border-slate-700 { border-color: rgba(0,0,0,0.08) !important; }
+    .border-slate-700\/50 { border-color: rgba(0,0,0,0.06) !important; }
+    .border-emerald-400\/30 { border-color: rgba(5,150,105,0.2) !important; }
+    .border-amber-400\/30 { border-color: rgba(180,83,9,0.2) !important; }
+    .border-red-400\/30 { border-color: rgba(185,28,28,0.2) !important; }
+    .border-blue-400\/30 { border-color: rgba(29,78,216,0.2) !important; }
+    .border-purple-400\/30 { border-color: rgba(109,40,217,0.2) !important; }
+
+    /* Responsive */
+    @media(max-width:768px) {
+      .tbl { font-size: .72rem; }
+      .tbl th, .tbl td { padding: 6px 8px; }
+      .branding-bar { font-size: 0.78rem; gap: 6px; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="content-wrapper max-w-7xl mx-auto p-4 md:p-6">
+
+  <!-- Header -->
+  <header class="text-center mb-2 pt-4">
+    <div class="flex items-center justify-center gap-4 mb-3">
+      <div class="w-16 h-16 rounded-2xl flex items-center justify-center text-4xl pulse-glow"
+           style="background: linear-gradient(135deg, #991b1b, #dc2626);">
+        🫁
+      </div>
+      <div class="text-left">
+        <h1 class="font-display text-3xl md:text-4xl font-bold tracking-tight">
+          <span class="text-gradient-red">PE Guideline Navigator</span>
+        </h1>
+        <p class="text-sm md:text-base mt-0.5 font-light" style="color:#475569;">
+          Six Guidelines, One Disease — Where Do They Agree?
+        </p>
+      </div>
+    </div>
+
+    <p class="text-sm mt-1 max-w-3xl mx-auto leading-relaxed whitespace-nowrap" style="color:#64748b;">
+      International Guideline Recommendations for Acute Pulmonary Embolism: <span class="text-gradient-gold font-semibold">Harmony, Dissonance &amp; Silence</span>
+    </p>
+  </header>
+
+  <!-- Branding Bar -->
+  <div class="glass-panel px-4 py-3 mb-2" style="border-left: 3px solid #991b1b;">
+    <div class="branding-bar">
+      <span class="name-text">Dr Abdul Mannan</span>
+      <span class="quals">FRCPath FCPS</span>
+      <span class="brand-sep">|</span>
+      <span class="brand-name">
+        <span class="brand-blood">Blood</span>🩸<span class="brand-doctor">Doctor</span>
+      </span>
+      <span class="brand-sep">|</span>
+      <a href="mailto:blooddoctor.co@gmail.com" class="email-link">blooddoctor.co@gmail.com</a>
+    </div>
+  </div>
+
+  <div class="section-divider"></div>
+
+  <!-- Navigation Tabs -->
+  <div class="glass-panel p-2 mb-6">
+    <div class="flex flex-wrap gap-2" id="tabNav">
+      <button class="tab-btn active px-4 py-2.5 rounded-xl text-sm font-semibold" data-tab="overview"><span>🏠 Overview</span></button>
+      <button class="tab-btn px-4 py-2.5 rounded-xl text-sm font-semibold" data-tab="diagnosis"><span>🔬 Diagnosis</span></button>
+      <button class="tab-btn px-4 py-2.5 rounded-xl text-sm font-semibold" data-tab="risk"><span>⚖️ Risk & Triage</span></button>
+      <button class="tab-btn px-4 py-2.5 rounded-xl text-sm font-semibold" data-tab="anticoag"><span>💊 Anticoagulation</span></button>
+      <button class="tab-btn px-4 py-2.5 rounded-xl text-sm font-semibold" data-tab="advanced"><span>🚨 Advanced Rx</span></button>
+      <button class="tab-btn px-4 py-2.5 rounded-xl text-sm font-semibold" data-tab="lifestyle"><span>🏃 Lifestyle</span></button>
+      <button class="tab-btn px-4 py-2.5 rounded-xl text-sm font-semibold" data-tab="duration"><span>⏱️ Duration</span></button>
+      <button class="tab-btn px-4 py-2.5 rounded-xl text-sm font-semibold" data-tab="algorithms"><span>🔀 Algorithms</span></button>
+      <button class="tab-btn px-4 py-2.5 rounded-xl text-sm font-semibold" data-tab="abbreviations"><span>📖 Abbreviations</span></button>
+    </div>
+  </div>
+
+  <!-- Tab Content -->
+  <div id="tabContent">
+
+    <!-- ===================== OVERVIEW TAB ===================== -->
+    <div id="tab-overview" class="tab-panel fade-in">
+      <div class="section-card">
+        <h2 class="font-display text-2xl font-bold mb-1 text-gradient-red">Consensus Pyramid</h2>
+        <p class="text-sm text-slate-500 mb-6">Central Illustration — Areas of agreement and disagreement across 6 international PE guidelines</p>
+
+        <!-- Harmony -->
+        <div class="mb-6">
+          <h3 class="font-semibold text-emerald-400 mb-3 flex items-center gap-2">
+            <span class="w-3 h-3 rounded-full bg-emerald-400"></span>
+            Harmony — Areas of Agreement
+          </h3>
+          <div class="grid md:grid-cols-2 gap-3">
+            <div class="rounded-xl p-4 border" style="background:rgba(22,163,74,0.06);border-color:rgba(22,163,74,0.2);">
+              <h4 class="font-semibold text-emerald-400 text-sm mb-2">Diagnosis</h4>
+              <ul class="text-sm text-slate-300 space-y-1">
+                <li>&#8226; Pre-test probability assessment recommended</li>
+                <li>&#8226; D-dimer for low/intermediate probability</li>
+                <li>&#8226; CTPA as first-line imaging</li>
+                <li>&#8226; V/Q scan as alternative</li>
+              </ul>
+            </div>
+            <div class="rounded-xl p-4 border" style="background:rgba(22,163,74,0.06);border-color:rgba(22,163,74,0.2);">
+              <h4 class="font-semibold text-emerald-400 text-sm mb-2">Treatment</h4>
+              <ul class="text-sm text-slate-300 space-y-1">
+                <li>&#8226; Immediate anticoagulation upon clinical suspicion</li>
+                <li>&#8226; DOACs preferred over VKAs for most patients</li>
+                <li>&#8226; Systemic thrombolysis for massive PE with hemodynamic instability</li>
+                <li>&#8226; IVC filters only when anticoagulation contraindicated</li>
+              </ul>
+            </div>
+            <div class="rounded-xl p-4 border" style="background:rgba(22,163,74,0.06);border-color:rgba(22,163,74,0.2);">
+              <h4 class="font-semibold text-emerald-400 text-sm mb-2">Follow-up</h4>
+              <ul class="text-sm text-slate-300 space-y-1">
+                <li>&#8226; Minimum 3 months anticoagulation</li>
+                <li>&#8226; CTEPH screening recommended</li>
+                <li>&#8226; Extended anticoagulation for unprovoked PE</li>
+              </ul>
+            </div>
+            <div class="rounded-xl p-4 border" style="background:rgba(22,163,74,0.06);border-color:rgba(22,163,74,0.2);">
+              <h4 class="font-semibold text-emerald-400 text-sm mb-2">Risk Stratification</h4>
+              <ul class="text-sm text-slate-300 space-y-1">
+                <li>&#8226; Hemodynamic assessment as first step</li>
+                <li>&#8226; RV dysfunction markers (imaging + biomarkers)</li>
+                <li>&#8226; Outpatient management for low-risk PE</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <!-- Dissonance -->
+        <div class="mb-6">
+          <h3 class="font-semibold text-amber-400 mb-3 flex items-center gap-2">
+            <span class="w-3 h-3 rounded-full bg-amber-400"></span>
+            Dissonance — Areas of Disagreement
+          </h3>
+          <div class="grid md:grid-cols-2 gap-3">
+            <div class="rounded-xl p-4 border" style="background:rgba(217,119,6,0.06);border-color:rgba(217,119,6,0.2);">
+              <h4 class="font-semibold text-amber-400 text-sm mb-2">Risk Scores</h4>
+              <ul class="text-sm text-slate-300 space-y-1">
+                <li>&#8226; PESI vs sPESI vs clinical assessment</li>
+                <li>&#8226; Which validated tools to recommend</li>
+                <li>&#8226; Threshold for intermediate-risk categorization</li>
+              </ul>
+            </div>
+            <div class="rounded-xl p-4 border" style="background:rgba(217,119,6,0.06);border-color:rgba(217,119,6,0.2);">
+              <h4 class="font-semibold text-amber-400 text-sm mb-2">Advanced Therapies</h4>
+              <ul class="text-sm text-slate-300 space-y-1">
+                <li>&#8226; Catheter-directed interventions — variable enthusiasm</li>
+                <li>&#8226; Surgical embolectomy indications differ</li>
+                <li>&#8226; Half-dose vs full-dose thrombolysis</li>
+                <li>&#8226; ECMO role and indications</li>
+              </ul>
+            </div>
+            <div class="rounded-xl p-4 border" style="background:rgba(217,119,6,0.06);border-color:rgba(217,119,6,0.2);">
+              <h4 class="font-semibold text-amber-400 text-sm mb-2">Anticoagulation Details</h4>
+              <ul class="text-sm text-slate-300 space-y-1">
+                <li>&#8226; Initial parenteral agent preferences</li>
+                <li>&#8226; Duration for provoked vs unprovoked PE</li>
+                <li>&#8226; Reduced-dose extended anticoagulation</li>
+              </ul>
+            </div>
+            <div class="rounded-xl p-4 border" style="background:rgba(217,119,6,0.06);border-color:rgba(217,119,6,0.2);">
+              <h4 class="font-semibold text-amber-400 text-sm mb-2">PERT Activation</h4>
+              <ul class="text-sm text-slate-300 space-y-1">
+                <li>&#8226; Only PERT Consortium explicitly recommends</li>
+                <li>&#8226; Other guidelines silent or cautious</li>
+                <li>&#8226; Lack of RCT evidence for multidisciplinary teams</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <!-- Silence -->
+        <div>
+          <h3 class="font-semibold text-slate-400 mb-3 flex items-center gap-2">
+            <span class="w-3 h-3 rounded-full bg-slate-500"></span>
+            Silence — Not Addressed
+          </h3>
+          <div class="grid md:grid-cols-3 gap-3">
+            <div class="rounded-xl p-4 border" style="background:rgba(100,116,139,0.06);border-color:rgba(100,116,139,0.2);">
+              <ul class="text-sm text-slate-400 space-y-1">
+                <li>&#8226; Post-PE exercise rehabilitation</li>
+                <li>&#8226; Return to physical activity timelines</li>
+              </ul>
+            </div>
+            <div class="rounded-xl p-4 border" style="background:rgba(100,116,139,0.06);border-color:rgba(100,116,139,0.2);">
+              <ul class="text-sm text-slate-400 space-y-1">
+                <li>&#8226; Air travel recommendations</li>
+                <li>&#8226; Hormonal contraception post-PE</li>
+              </ul>
+            </div>
+            <div class="rounded-xl p-4 border" style="background:rgba(100,116,139,0.06);border-color:rgba(100,116,139,0.2);">
+              <ul class="text-sm text-slate-400 space-y-1">
+                <li>&#8226; Psychological impact management</li>
+                <li>&#8226; Post-PE syndrome definition</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Guidelines Summary Cards -->
+      <div class="grid md:grid-cols-3 gap-4">
+        <div class="section-card hover-lift cursor-default">
+          <div class="flex items-center gap-2 mb-2">
+            <span class="badge badge-blue">ESC/ERS 2019</span>
+          </div>
+          <p class="text-xs text-slate-400">European Society of Cardiology / European Respiratory Society. Most comprehensive guideline with detailed risk stratification algorithm.</p>
+        </div>
+        <div class="section-card hover-lift cursor-default">
+          <div class="flex items-center gap-2 mb-2">
+            <span class="badge badge-purple">PERT 2019</span>
+          </div>
+          <p class="text-xs text-slate-400">Pulmonary Embolism Response Team Consortium. Emphasizes multidisciplinary team approach for submassive and massive PE.</p>
+        </div>
+        <div class="section-card hover-lift cursor-default">
+          <div class="flex items-center gap-2 mb-2">
+            <span class="badge badge-green">CHEST 2021</span>
+          </div>
+          <p class="text-xs text-slate-400">American College of Chest Physicians (ACCP). Strong focus on antithrombotic therapy recommendations with GRADE methodology.</p>
+        </div>
+        <div class="section-card hover-lift cursor-default">
+          <div class="flex items-center gap-2 mb-2">
+            <span class="badge badge-red">AHA 2011</span>
+          </div>
+          <p class="text-xs text-slate-400">American Heart Association. Scientific statement on massive and submassive PE. Oldest guideline in comparison — predates DOACs.</p>
+        </div>
+        <div class="section-card hover-lift cursor-default">
+          <div class="flex items-center gap-2 mb-2">
+            <span class="badge badge-amber">ASH 2018-2020</span>
+          </div>
+          <p class="text-xs text-slate-400">American Society of Hematology. Multiple focused guidelines on VTE management, diagnosis, and special populations.</p>
+        </div>
+        <div class="section-card hover-lift cursor-default">
+          <div class="flex items-center gap-2 mb-2">
+            <span class="badge badge-gray">NICE 2020-2023</span>
+          </div>
+          <p class="text-xs text-slate-400">National Institute for Health and Care Excellence. UK-based guidelines with cost-effectiveness analysis integrated.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===================== DIAGNOSIS TAB ===================== -->
+    <div id="tab-diagnosis" class="tab-panel hidden fade-in">
+      <div class="section-card">
+        <h2 class="font-display text-2xl font-bold mb-1 text-gradient-red">Diagnosis of Acute Pulmonary Embolism</h2>
+        <p class="text-slate-500 text-sm mb-4">Figure 1: Comparison of diagnostic recommendations across 6 guidelines</p>
+        <div class="scroll-table">
+          <table class="tbl">
+            <thead>
+              <tr>
+                <th style="min-width:160px">Topic</th>
+                <th style="min-width:140px">ESC/ERS 2019</th>
+                <th style="min-width:140px">PERT 2019</th>
+                <th style="min-width:140px">CHEST 2021</th>
+                <th style="min-width:140px">AHA 2011</th>
+                <th style="min-width:140px">ASH 2020</th>
+                <th style="min-width:140px">NICE 2020</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="font-semibold">Pre-test Probability</td>
+                <td>Wells / Geneva scores <span class="badge badge-green">Class I</span></td>
+                <td>Clinical assessment recommended</td>
+                <td>Wells score preferred; gestalt acceptable</td>
+                <td>Clinical assessment recommended</td>
+                <td>Validated CDR recommended</td>
+                <td>Wells score (2-level) <span class="badge badge-green">Recommended</span></td>
+              </tr>
+              <tr>
+                <td class="font-semibold">D-dimer</td>
+                <td>Age-adjusted cutoffs; high-sensitivity assays <span class="badge badge-green">Class I</span></td>
+                <td>Use in low/intermediate PTP; age-adjusted</td>
+                <td>Age-adjusted D-dimer recommended</td>
+                <td>ELISA-based assays; standard 500 ng/mL</td>
+                <td>Age-adjusted or PTP-adjusted cutoffs</td>
+                <td>Age-adjusted; point-of-care acceptable</td>
+              </tr>
+              <tr>
+                <td class="font-semibold">PERC Rule</td>
+                <td>Can be used in low PTP <span class="badge badge-blue">Class IIb</span></td>
+                <td>Can exclude PE if all 8 criteria negative</td>
+                <td>Suggested in low PTP settings</td>
+                <td><span class="badge badge-gray">Not addressed</span></td>
+                <td><span class="badge badge-gray">Not addressed</span></td>
+                <td><span class="badge badge-gray">Not addressed</span></td>
+              </tr>
+              <tr>
+                <td class="font-semibold">CTPA</td>
+                <td>First-line imaging <span class="badge badge-green">Class I</span></td>
+                <td>Gold standard imaging</td>
+                <td>First-line; consider radiation exposure</td>
+                <td>Primary imaging modality</td>
+                <td>Standard diagnostic imaging</td>
+                <td>First-line if PE likely or +ve D-dimer</td>
+              </tr>
+              <tr>
+                <td class="font-semibold">V/Q Scan</td>
+                <td>Alternative when CTPA contraindicated <span class="badge badge-blue">Class IIa</span></td>
+                <td>Alternative to CTPA</td>
+                <td>Acceptable alternative; SPECT V/Q preferred</td>
+                <td>Useful if CTPA contraindicated</td>
+                <td>Alternative option</td>
+                <td>If CTPA contraindicated or unavailable</td>
+              </tr>
+              <tr>
+                <td class="font-semibold">Pregnancy</td>
+                <td>D-dimer has lower specificity; CTPA or V/Q based on clinical scenario</td>
+                <td>Imaging modality based on clinical judgment</td>
+                <td>V/Q preferred to reduce breast radiation; CTPA acceptable</td>
+                <td>Imaging necessary; MRI may be considered</td>
+                <td>V/Q scan preferred; D-dimer can be used</td>
+                <td>Refer for specialist assessment</td>
+              </tr>
+              <tr>
+                <td class="font-semibold">Echocardiography</td>
+                <td>Not diagnostic alone; RV assessment for risk stratification <span class="badge badge-green">Class I</span></td>
+                <td>Useful for risk stratification; bedside TTE</td>
+                <td>For hemodynamically unstable patients</td>
+                <td>Bedside echo in unstable patients</td>
+                <td>Risk assessment tool</td>
+                <td>Not primary diagnostic tool</td>
+              </tr>
+              <tr>
+                <td class="font-semibold">Lower Limb CUS</td>
+                <td>Can confirm VTE diagnosis; proximal DVT supports PE diagnosis</td>
+                <td>Supportive evidence</td>
+                <td>If imaging delayed; +ve CUS can confirm VTE</td>
+                <td>May support diagnosis</td>
+                <td>Supportive diagnostic role</td>
+                <td>Proximal leg vein USS if CTPA inconclusive</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===================== RISK & TRIAGE TAB ===================== -->
+    <div id="tab-risk" class="tab-panel hidden fade-in">
+      <div class="section-card">
+        <h2 class="font-display text-2xl font-bold mb-1 text-gradient-red">Risk Stratification &amp; Triage</h2>
+        <p class="text-slate-500 text-sm mb-4">Figure 2: Risk stratification, level of care, home-based treatment, and PERT recommendations</p>
+        <div class="scroll-table">
+          <table class="tbl">
+            <thead>
+              <tr>
+                <th style="min-width:160px">Topic</th>
+                <th style="min-width:140px">ESC/ERS 2019</th>
+                <th style="min-width:140px">PERT 2019</th>
+                <th style="min-width:140px">CHEST 2021</th>
+                <th style="min-width:140px">AHA 2011</th>
+                <th style="min-width:140px">ASH 2020</th>
+                <th style="min-width:140px">NICE 2023</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="font-semibold">Classification</td>
+                <td>High / Intermediate-High / Intermediate-Low / Low risk</td>
+                <td>Massive / Submassive / Low risk</td>
+                <td>Based on hemodynamic stability and RV function</td>
+                <td>Massive / Submassive / Low risk</td>
+                <td>Risk-based approach</td>
+                <td>Hemodynamically unstable vs stable</td>
+              </tr>
+              <tr>
+                <td class="font-semibold">Risk Scores</td>
+                <td>PESI / sPESI <span class="badge badge-green">Class I</span></td>
+                <td>sPESI; clinical judgment</td>
+                <td>Hestia criteria; PESI/sPESI</td>
+                <td>Clinical assessment</td>
+                <td>Validated prognostic tools</td>
+                <td>PE severity score; clinical assessment</td>
+              </tr>
+              <tr>
+                <td class="font-semibold">RV Dysfunction</td>
+                <td>TTE or CTPA: RV/LV ratio &#8805;0.9 <span class="badge badge-green">Class I</span></td>
+                <td>Echo or CT assessment</td>
+                <td>Imaging-based assessment</td>
+                <td>RV dilation on echo/CT</td>
+                <td>RV function assessment</td>
+                <td>Echo or CTPA for RV assessment</td>
+              </tr>
+              <tr>
+                <td class="font-semibold">Biomarkers</td>
+                <td>Troponin + BNP/NT-proBNP <span class="badge badge-green">Class I</span></td>
+                <td>Troponin for risk stratification</td>
+                <td>Troponin for intermediate risk</td>
+                <td>Troponin; BNP</td>
+                <td>Cardiac biomarkers</td>
+                <td>Troponin if risk uncertain</td>
+              </tr>
+              <tr>
+                <td class="font-semibold">Home Treatment</td>
+                <td>Low-risk PE (sPESI 0); Hestia criteria <span class="badge badge-blue">Class IIa</span></td>
+                <td>Low-risk; adequate social support</td>
+                <td>Outpatient treatment recommended for low-risk; Hestia criteria <span class="badge badge-green">Strong</span></td>
+                <td><span class="badge badge-gray">Not addressed</span></td>
+                <td>Outpatient management for low-risk PE</td>
+                <td>Outpatient if PE severity criteria met and adequate support</td>
+              </tr>
+              <tr>
+                <td class="font-semibold">PERT / MDT</td>
+                <td>Not specifically recommended</td>
+                <td><span class="badge badge-green">Strongly recommended</span> for submassive and massive PE</td>
+                <td>Not specifically recommended</td>
+                <td>Not addressed (pre-dates PERT concept)</td>
+                <td>Not specifically recommended</td>
+                <td>Not specifically recommended</td>
+              </tr>
+              <tr>
+                <td class="font-semibold">ICU Admission</td>
+                <td>Massive PE; intermediate-high with hemodynamic deterioration</td>
+                <td>Massive PE; deteriorating submassive PE</td>
+                <td>Hemodynamic instability</td>
+                <td>Massive PE requiring intervention</td>
+                <td>Hemodynamically unstable patients</td>
+                <td>Hemodynamically unstable; consider HDU/ICU</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===================== ANTICOAGULATION TAB ===================== -->
+    <div id="tab-anticoag" class="tab-panel hidden fade-in">
+      <div class="section-card">
+        <h2 class="font-display text-2xl font-bold mb-1 text-gradient-red">Immediate Anticoagulation</h2>
+        <p class="text-slate-500 text-sm mb-4">Figure 3: Initial anticoagulation, parenteral therapy, and HIT management</p>
+        <div class="scroll-table">
+          <table class="tbl">
+            <thead>
+              <tr>
+                <th style="min-width:160px">Topic</th>
+                <th style="min-width:140px">ESC/ERS 2019</th>
+                <th style="min-width:140px">PERT 2019</th>
+                <th style="min-width:140px">CHEST 2021</th>
+                <th style="min-width:140px">AHA 2011</th>
+                <th style="min-width:140px">ASH 2018</th>
+                <th style="min-width:140px">NICE 2023</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="font-semibold">When to Start</td>
+                <td>Start if clinical suspicion high, even before confirmation <span class="badge badge-green">Class I</span></td>
+                <td>Immediately upon suspicion</td>
+                <td>Start upon clinical suspicion if high/intermediate PTP</td>
+                <td>Immediately upon diagnosis</td>
+                <td>Immediate initiation recommended</td>
+                <td>Start before diagnostic tests if PE likely</td>
+              </tr>
+              <tr>
+                <td class="font-semibold">Initial Parenteral</td>
+                <td>UFH for massive PE; LMWH or fondaparinux for others <span class="badge badge-green">Class I</span></td>
+                <td>UFH for massive; LMWH for submassive/low risk</td>
+                <td>LMWH preferred over UFH for most patients</td>
+                <td>UFH for massive; LMWH acceptable</td>
+                <td>LMWH over UFH for initial therapy <span class="badge badge-green">Strong</span></td>
+                <td>LMWH unless renal impairment; UFH if thrombolysis considered</td>
+              </tr>
+              <tr>
+                <td class="font-semibold">DOAC Preference</td>
+                <td>Apixaban or rivaroxaban preferred over VKA <span class="badge badge-green">Class I</span></td>
+                <td>DOACs recommended for most patients</td>
+                <td>DOACs over VKA <span class="badge badge-green">Strong recommendation</span></td>
+                <td>VKA standard (pre-dates DOACs); UFH + warfarin</td>
+                <td>DOACs over VKA <span class="badge badge-green">Strong</span></td>
+                <td>Apixaban or rivaroxaban first-line; DOACs over VKA</td>
+              </tr>
+              <tr>
+                <td class="font-semibold">DOAC Specifics</td>
+                <td>Rivaroxaban or apixaban (single-drug approach); dabigatran or edoxaban (after parenteral lead-in)</td>
+                <td>Single-drug or dual-drug approach acceptable</td>
+                <td>No specific DOAC preference; patient factors guide choice</td>
+                <td>Not applicable (2011)</td>
+                <td>No specific DOAC preference</td>
+                <td>Apixaban preferred; rivaroxaban alternative</td>
+              </tr>
+              <tr>
+                <td class="font-semibold">Cancer-Associated PE</td>
+                <td>LMWH or edoxaban/rivaroxaban; avoid DOACs in GI/GU cancers</td>
+                <td>LMWH standard; DOACs emerging option</td>
+                <td>LMWH or DOAC over VKA; consider bleeding risk</td>
+                <td>LMWH preferred</td>
+                <td>LMWH or DOAC over VKA <span class="badge badge-green">Strong</span></td>
+                <td>LMWH or DOAC; specialist assessment for high-risk GI cancers</td>
+              </tr>
+              <tr>
+                <td class="font-semibold">HIT Management</td>
+                <td>Stop heparin; use argatroban, bivalirudin, or fondaparinux</td>
+                <td>Non-heparin anticoagulants</td>
+                <td>Non-heparin alternatives; fondaparinux or argatroban</td>
+                <td>Argatroban or lepirudin (withdrawn)</td>
+                <td>Non-heparin anticoagulant; consider DOAC transition</td>
+                <td>Stop heparin; specialist haematology input</td>
+              </tr>
+              <tr>
+                <td class="font-semibold">Renal Impairment</td>
+                <td>UFH for severe; dose-adjust LMWH; caution with DOACs</td>
+                <td>UFH in severe renal failure</td>
+                <td>Dose adjustment required; UFH for CrCl &lt;30</td>
+                <td>UFH preferred in renal failure</td>
+                <td>Dose adjustment; monitoring</td>
+                <td>UFH if eGFR &lt;15; dose-adjust LMWH if 15-30</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===================== ADVANCED THERAPIES TAB ===================== -->
+    <div id="tab-advanced" class="tab-panel hidden fade-in">
+      <div class="section-card">
+        <h2 class="font-display text-2xl font-bold mb-1 text-gradient-red">Advanced Therapies</h2>
+        <p class="text-slate-500 text-sm mb-4">Figure 4: Fibrinolysis, surgical embolectomy, catheter-directed intervention, ECMO, and IVC filters</p>
+        <div class="scroll-table">
+          <table class="tbl">
+            <thead>
+              <tr>
+                <th style="min-width:160px">Therapy</th>
+                <th style="min-width:140px">ESC/ERS 2019</th>
+                <th style="min-width:140px">PERT 2019</th>
+                <th style="min-width:140px">CHEST 2021</th>
+                <th style="min-width:140px">AHA 2011</th>
+                <th style="min-width:140px">ASH 2020</th>
+                <th style="min-width:140px">NICE 2023</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="font-semibold">Systemic Thrombolysis — Massive PE</td>
+                <td><span class="badge badge-green">Class I</span> for hemodynamic instability (cardiac arrest, shock)</td>
+                <td>First-line for massive PE with hemodynamic compromise</td>
+                <td>Recommended for hypotension/shock <span class="badge badge-green">Strong</span></td>
+                <td>Reasonable for massive PE <span class="badge badge-green">Class I</span></td>
+                <td>Systemic thrombolysis recommended</td>
+                <td>Consider for hemodynamically unstable PE</td>
+              </tr>
+              <tr>
+                <td class="font-semibold">Systemic Thrombolysis — Submassive PE</td>
+                <td><span class="badge badge-amber">Class IIa</span> if hemodynamic deterioration despite anticoagulation (rescue)</td>
+                <td>Consider in submassive with clinical deterioration</td>
+                <td>Against routine thrombolysis for submassive <span class="badge badge-red">Against</span></td>
+                <td><span class="badge badge-blue">Class IIb</span> may be considered</td>
+                <td>Against routine use in submassive</td>
+                <td>Not routinely recommended for stable patients</td>
+              </tr>
+              <tr>
+                <td class="font-semibold">Half-Dose Thrombolysis</td>
+                <td>Not specifically recommended; full-dose alteplase standard</td>
+                <td>Can be considered to reduce bleeding risk</td>
+                <td>Insufficient evidence for recommendation</td>
+                <td><span class="badge badge-gray">Not addressed</span></td>
+                <td><span class="badge badge-gray">Not addressed</span></td>
+                <td><span class="badge badge-gray">Not addressed</span></td>
+              </tr>
+              <tr>
+                <td class="font-semibold">Surgical Embolectomy</td>
+                <td><span class="badge badge-green">Class I</span> if thrombolysis failed or contraindicated</td>
+                <td>Option for massive PE; experienced centers</td>
+                <td>When thrombolysis fails or contraindicated</td>
+                <td><span class="badge badge-blue">Class IIa</span> for massive PE</td>
+                <td>When thrombolysis contraindicated/failed</td>
+                <td>Specialist surgical centers; when other therapies fail</td>
+              </tr>
+              <tr>
+                <td class="font-semibold">Catheter-Directed Intervention (CDI)</td>
+                <td><span class="badge badge-blue">Class IIa</span> if thrombolysis failed or contraindicated</td>
+                <td><span class="badge badge-green">Recommended</span> as option for massive and submassive PE</td>
+                <td>Limited evidence; consider case-by-case</td>
+                <td><span class="badge badge-blue">Class IIb</span> reasonable in some cases</td>
+                <td>Insufficient evidence; clinical trials needed</td>
+                <td>Only in specialist centers; limited evidence</td>
+              </tr>
+              <tr>
+                <td class="font-semibold">ECMO</td>
+                <td><span class="badge badge-blue">Class IIb</span> as bridge to embolectomy or recovery in refractory cases</td>
+                <td>Consider in refractory massive PE as bridge</td>
+                <td><span class="badge badge-gray">Not addressed</span></td>
+                <td><span class="badge badge-gray">Not addressed</span></td>
+                <td><span class="badge badge-gray">Not addressed</span></td>
+                <td><span class="badge badge-gray">Not addressed</span></td>
+              </tr>
+              <tr>
+                <td class="font-semibold">IVC Filter</td>
+                <td>Only when anticoagulation absolutely contraindicated <span class="badge badge-red">Class III</span> as adjunct to anticoag</td>
+                <td>When anticoagulation contraindicated; retrievable preferred</td>
+                <td>Against routine use; only if anticoag contraindicated <span class="badge badge-red">Against routine</span></td>
+                <td><span class="badge badge-blue">Class IIa</span> when anticoag contraindicated</td>
+                <td>Against routine use in anticoagulated patients</td>
+                <td>Only if anticoagulation contraindicated; plan retrieval</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===================== LIFESTYLE TAB ===================== -->
+    <div id="tab-lifestyle" class="tab-panel hidden fade-in">
+      <div class="section-card">
+        <h2 class="font-display text-2xl font-bold mb-1 text-gradient-red">Post-PE Lifestyle Recommendations</h2>
+        <p class="text-slate-500 text-sm mb-4">Figure 5: Lifestyle recommendations following acute PE</p>
+
+        <div class="grid md:grid-cols-3 gap-4">
+          <!-- First Weeks -->
+          <div class="lifestyle-card" style="border-color:rgba(220,38,38,0.3);">
+            <div class="flex items-center gap-2 mb-3">
+              <div class="w-10 h-10 rounded-lg flex items-center justify-center text-lg" style="background:rgba(220,38,38,0.15);">🏥</div>
+              <div>
+                <h3 class="font-bold text-red-400">First Weeks</h3>
+                <p class="text-xs text-red-400/60">0-4 weeks post-PE</p>
+              </div>
+            </div>
+            <ul class="text-sm text-slate-300 space-y-2">
+              <li class="flex items-start gap-2">
+                <span class="text-red-400 mt-0.5">&#9679;</span>
+                <span><strong class="text-slate-200">Rest &amp; Recovery:</strong> Gradual return to daily activities as tolerated</span>
+              </li>
+              <li class="flex items-start gap-2">
+                <span class="text-red-400 mt-0.5">&#9679;</span>
+                <span><strong class="text-slate-200">Mobilization:</strong> Early mobilization recommended; avoid prolonged bed rest</span>
+              </li>
+              <li class="flex items-start gap-2">
+                <span class="text-red-400 mt-0.5">&#9679;</span>
+                <span><strong class="text-slate-200">Compression:</strong> Graduated compression stockings — variable recommendations</span>
+              </li>
+              <li class="flex items-start gap-2">
+                <span class="text-red-400 mt-0.5">&#9679;</span>
+                <span><strong class="text-slate-200">Monitoring:</strong> Watch for signs of recurrence, bleeding</span>
+              </li>
+              <li class="flex items-start gap-2">
+                <span class="text-red-400 mt-0.5">&#9679;</span>
+                <span><strong class="text-slate-200">Medication:</strong> Adherence to anticoagulation; DOAC counseling</span>
+              </li>
+            </ul>
+          </div>
+
+          <!-- First Months -->
+          <div class="lifestyle-card" style="border-color:rgba(217,119,6,0.3);">
+            <div class="flex items-center gap-2 mb-3">
+              <div class="w-10 h-10 rounded-lg flex items-center justify-center text-lg" style="background:rgba(217,119,6,0.15);">📅</div>
+              <div>
+                <h3 class="font-bold text-amber-400">First Months</h3>
+                <p class="text-xs text-amber-400/60">1-6 months post-PE</p>
+              </div>
+            </div>
+            <ul class="text-sm text-slate-300 space-y-2">
+              <li class="flex items-start gap-2">
+                <span class="text-amber-400 mt-0.5">&#9679;</span>
+                <span><strong class="text-slate-200">Exercise:</strong> Gradual return to exercise; supervised if available</span>
+              </li>
+              <li class="flex items-start gap-2">
+                <span class="text-amber-400 mt-0.5">&#9679;</span>
+                <span><strong class="text-slate-200">Work:</strong> Gradual return to work; modified duties if needed</span>
+              </li>
+              <li class="flex items-start gap-2">
+                <span class="text-amber-400 mt-0.5">&#9679;</span>
+                <span><strong class="text-slate-200">Travel:</strong> Short flights acceptable with precautions; hydration and mobilization</span>
+              </li>
+              <li class="flex items-start gap-2">
+                <span class="text-amber-400 mt-0.5">&#9679;</span>
+                <span><strong class="text-slate-200">Follow-up:</strong> 3-month clinical review; reassess anticoagulation duration</span>
+              </li>
+              <li class="flex items-start gap-2">
+                <span class="text-amber-400 mt-0.5">&#9679;</span>
+                <span><strong class="text-slate-200">CTEPH Screen:</strong> Assess for persistent dyspnea; echocardiography if symptomatic</span>
+              </li>
+            </ul>
+          </div>
+
+          <!-- Long Term -->
+          <div class="lifestyle-card" style="border-color:rgba(22,163,74,0.3);">
+            <div class="flex items-center gap-2 mb-3">
+              <div class="w-10 h-10 rounded-lg flex items-center justify-center text-lg" style="background:rgba(22,163,74,0.15);">🌿</div>
+              <div>
+                <h3 class="font-bold text-emerald-400">Long Term</h3>
+                <p class="text-xs text-emerald-400/60">6+ months post-PE</p>
+              </div>
+            </div>
+            <ul class="text-sm text-slate-300 space-y-2">
+              <li class="flex items-start gap-2">
+                <span class="text-emerald-400 mt-0.5">&#9679;</span>
+                <span><strong class="text-slate-200">Activity:</strong> Full return to pre-PE activity level; regular exercise encouraged</span>
+              </li>
+              <li class="flex items-start gap-2">
+                <span class="text-emerald-400 mt-0.5">&#9679;</span>
+                <span><strong class="text-slate-200">Risk Factors:</strong> Weight management; smoking cessation; optimize comorbidities</span>
+              </li>
+              <li class="flex items-start gap-2">
+                <span class="text-emerald-400 mt-0.5">&#9679;</span>
+                <span><strong class="text-slate-200">Hormonal:</strong> Risk-benefit discussion for OCP/HRT; consider alternatives</span>
+              </li>
+              <li class="flex items-start gap-2">
+                <span class="text-emerald-400 mt-0.5">&#9679;</span>
+                <span><strong class="text-slate-200">Travel:</strong> Long-haul flights with compression, hydration, mobilization</span>
+              </li>
+              <li class="flex items-start gap-2">
+                <span class="text-emerald-400 mt-0.5">&#9679;</span>
+                <span><strong class="text-slate-200">Psychological:</strong> Address anxiety, PTSD symptoms; patient support groups</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===================== DURATION TAB ===================== -->
+    <div id="tab-duration" class="tab-panel hidden fade-in">
+      <div class="section-card">
+        <h2 class="font-display text-2xl font-bold mb-1 text-gradient-red">Duration &amp; Intensity of Anticoagulation</h2>
+        <p class="text-slate-500 text-sm mb-4">Figure 6: Duration and intensity based on risk factor profile</p>
+        <div class="scroll-table">
+          <table class="tbl">
+            <thead>
+              <tr>
+                <th style="min-width:160px">Scenario</th>
+                <th style="min-width:140px">ESC/ERS 2019</th>
+                <th style="min-width:140px">PERT 2019</th>
+                <th style="min-width:140px">CHEST 2021</th>
+                <th style="min-width:140px">AHA 2011</th>
+                <th style="min-width:140px">ASH 2020</th>
+                <th style="min-width:140px">NICE 2020</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="font-semibold">Major Transient Risk Factor (no persistent RF)</td>
+                <td>3 months <span class="badge badge-green">Class I</span></td>
+                <td>3 months minimum</td>
+                <td>3 months; then discontinue <span class="badge badge-green">Strong</span></td>
+                <td>3-6 months</td>
+                <td>3 months; discontinue <span class="badge badge-green">Strong</span></td>
+                <td>3 months; review and stop</td>
+              </tr>
+              <tr>
+                <td class="font-semibold">Major Transient RF + Persistent Risk Factor</td>
+                <td>Consider extended if persistent risk factors <span class="badge badge-yellow">Class IIa</span></td>
+                <td>Individualized based on persistent risk</td>
+                <td>Suggest continuing if persistent risk factor <span class="badge badge-blue">Conditional</span></td>
+                <td>Individualized assessment</td>
+                <td>Consider extended anticoagulation <span class="badge badge-blue">Conditional</span></td>
+                <td>Review at 3 months; consider extended if persistent RF</td>
+              </tr>
+              <tr>
+                <td class="font-semibold">Minor Transient Risk Factor</td>
+                <td>3 months; consider extension based on bleeding risk</td>
+                <td>3-6 months; individualized</td>
+                <td>3 months; suggest discontinuing <span class="badge badge-blue">Conditional</span></td>
+                <td>3-6 months</td>
+                <td>3 months; conditional stopping</td>
+                <td>3-6 months; individualized</td>
+              </tr>
+              <tr>
+                <td class="font-semibold">Unprovoked PE</td>
+                <td>Extended (indefinite) anticoagulation <span class="badge badge-green">Class I</span>; reassess periodically</td>
+                <td>Extended therapy recommended</td>
+                <td>Extended over 3 months <span class="badge badge-green">Strong</span>; low bleeding risk required</td>
+                <td>Extended therapy; reassess annually</td>
+                <td>Extended anticoagulation <span class="badge badge-green">Strong</span></td>
+                <td>Extended (beyond 3 months); annual review</td>
+              </tr>
+              <tr>
+                <td class="font-semibold">Cancer-Associated PE</td>
+                <td>Extended (&#8805;6 months, often indefinite while active cancer)</td>
+                <td>Extended; duration linked to cancer status</td>
+                <td>Extended; LMWH or DOAC <span class="badge badge-green">Strong</span></td>
+                <td>Extended (LMWH preferred)</td>
+                <td>Extended; LMWH or DOAC</td>
+                <td>Extended; review with oncology</td>
+              </tr>
+              <tr>
+                <td class="font-semibold">Antiphospholipid Syndrome</td>
+                <td>VKA preferred (INR 2-3); DOACs not recommended <span class="badge badge-red">Class III</span></td>
+                <td>VKA; DOACs not recommended</td>
+                <td>VKA over DOAC</td>
+                <td>Indefinite anticoagulation</td>
+                <td>VKA preferred; DOACs not recommended in triple-positive</td>
+                <td>Specialist haematology management; VKA standard</td>
+              </tr>
+              <tr>
+                <td class="font-semibold">Recurrent VTE</td>
+                <td>Extended (indefinite) <span class="badge badge-green">Class I</span></td>
+                <td>Indefinite anticoagulation</td>
+                <td>Extended over 3 months <span class="badge badge-green">Strong</span></td>
+                <td>Indefinite</td>
+                <td>Extended indefinite <span class="badge badge-green">Strong</span></td>
+                <td>Extended (indefinite); annual review</td>
+              </tr>
+              <tr>
+                <td class="font-semibold">Reduced-Dose Extended</td>
+                <td>Apixaban 2.5mg BD or rivaroxaban 10mg OD after initial treatment <span class="badge badge-blue">Class IIa</span></td>
+                <td>Can be considered</td>
+                <td>Reduced-dose DOAC for extended therapy <span class="badge badge-blue">Conditional</span></td>
+                <td>Not applicable (2011)</td>
+                <td>Reduced-dose DOAC as option</td>
+                <td>Reduced-dose apixaban (2.5mg BD) or rivaroxaban (10mg OD)</td>
+              </tr>
+              <tr>
+                <td class="font-semibold">Aspirin Alternative</td>
+                <td>If anticoagulation discontinued; aspirin may be considered <span class="badge badge-blue">Class IIb</span></td>
+                <td>Not standard recommendation</td>
+                <td>Aspirin over no treatment if anticoag stopped <span class="badge badge-blue">Conditional</span></td>
+                <td>Not addressed</td>
+                <td>Aspirin if anticoag discontinued</td>
+                <td>Not routinely recommended as alternative</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===================== ALGORITHMS TAB ===================== -->
+    <div id="tab-algorithms" class="tab-panel hidden fade-in">
+
+      <!-- Algorithm 1: Diagnostic Pathway -->
+      <div class="section-card">
+        <h2 class="font-display text-2xl font-bold mb-1 text-gradient-red">Algorithm 1: PE Diagnostic Pathway</h2>
+        <p class="text-slate-500 text-sm mb-4">Harmonized diagnostic approach based on guideline consensus</p>
+        <div class="mermaid">
+flowchart TD
+    A["🫁 Suspected Acute PE"] --> B{"Hemodynamically<br/>Stable?"}
+    B -->|"No — Shock / Arrest"| C["Bedside TTE/Echo"]
+    C --> D{"RV Dysfunction<br/>on Echo?"}
+    D -->|"Yes"| E["🚨 Treat as Massive PE<br/>Consider CTPA if stable enough"]
+    D -->|"No"| F["Consider Alternative<br/>Diagnoses"]
+    B -->|"Yes — Stable"| G["Assess Pre-Test<br/>Probability"]
+    G --> H{"PTP Assessment<br/>(Wells / Geneva)"}
+    H -->|"Low PTP"| I{"PERC Rule<br/>(if applicable)"}
+    I -->|"All 8 Negative"| J["✅ PE Excluded<br/>No further testing"]
+    I -->|"Any Positive"| K["D-dimer Test<br/>(age-adjusted)"]
+    H -->|"Intermediate PTP"| K
+    K --> L{"D-dimer<br/>Result?"}
+    L -->|"Negative"| M["✅ PE Excluded"]
+    L -->|"Positive"| N["CTPA Imaging"]
+    H -->|"High PTP"| N
+    N --> O{"CTPA Result?"}
+    O -->|"PE Confirmed"| P["🔴 Confirmed PE<br/>→ Risk Stratify"]
+    O -->|"Negative"| Q{"Clinical<br/>Suspicion?"}
+    Q -->|"Still High"| R["Consider V/Q Scan<br/>or Lower Limb CUS"]
+    Q -->|"Low"| S["✅ PE Excluded<br/>Consider alternatives"]
+
+    style A fill:#fef2f2,stroke:#dc2626,stroke-width:2px,color:#991b1b
+    style E fill:#fef2f2,stroke:#dc2626,stroke-width:2px,color:#991b1b
+    style P fill:#fef2f2,stroke:#dc2626,stroke-width:2px,color:#991b1b
+    style J fill:#dcfce7,stroke:#16a34a,stroke-width:2px,color:#166534
+    style M fill:#dcfce7,stroke:#16a34a,stroke-width:2px,color:#166534
+    style S fill:#dcfce7,stroke:#16a34a,stroke-width:2px,color:#166534
+    style F fill:#fef3c7,stroke:#d97706,stroke-width:2px,color:#92400e
+        </div>
+      </div>
+
+      <!-- Algorithm 2: Risk Stratification -->
+      <div class="section-card">
+        <h2 class="font-display text-2xl font-bold mb-1 text-gradient-red">Algorithm 2: Risk Stratification &amp; Management</h2>
+        <p class="text-slate-500 text-sm mb-4">Based on ESC/ERS 2019 classification</p>
+        <div class="mermaid">
+flowchart TD
+    A["🔴 Confirmed PE"] --> B{"Hemodynamic<br/>Instability?<br/>(SBP &lt;90 or drop ≥40)"}
+    B -->|"Yes"| C["💀 HIGH RISK<br/>(Massive PE)"]
+    C --> D["ICU Admission<br/>UFH + Systemic Thrombolysis<br/>Consider Surgical/CDI if fails<br/>ECMO as bridge"]
+    B -->|"No — Stable"| E{"PESI / sPESI<br/>Score?"}
+    E -->|"sPESI ≥1 or<br/>PESI III-V"| F{"RV Dysfunction<br/>AND<br/>Elevated Troponin?"}
+    F -->|"Both Positive"| G["⚠️ INTERMEDIATE-HIGH<br/>(Submassive)"]
+    G --> H["Hospital Admission<br/>Anticoagulation<br/>Monitor for Deterioration<br/>Consider PERT/MDT<br/>Rescue Thrombolysis if worsens"]
+    F -->|"One or Neither"| I["⚡ INTERMEDIATE-LOW"]
+    I --> J["Hospital Admission<br/>Anticoagulation<br/>Standard Monitoring"]
+    E -->|"sPESI = 0 or<br/>PESI I-II"| K{"Hestia Criteria<br/>Met?"}
+    K -->|"No Exclusions"| L["✅ LOW RISK"]
+    L --> M["Consider Home Treatment<br/>DOAC Initiation<br/>Early Follow-up (48-72h)"]
+    K -->|"Exclusion Present"| J
+
+    style C fill:#fef2f2,stroke:#dc2626,stroke-width:3px,color:#991b1b
+    style G fill:#fef3c7,stroke:#d97706,stroke-width:2px,color:#92400e
+    style I fill:#fff7ed,stroke:#f59e0b,stroke-width:2px,color:#92400e
+    style L fill:#dcfce7,stroke:#16a34a,stroke-width:2px,color:#166534
+        </div>
+      </div>
+
+      <!-- Algorithm 3: Anticoagulation Duration -->
+      <div class="section-card">
+        <h2 class="font-display text-2xl font-bold mb-1 text-gradient-red">Algorithm 3: Anticoagulation Duration Decision</h2>
+        <p class="text-slate-500 text-sm mb-4">Guideline-harmonized approach to duration decisions</p>
+        <div class="mermaid">
+flowchart LR
+    A["PE Confirmed"] --> B{"Provoking<br/>Factor?"}
+    B -->|"Major Transient"| C["3 Months then STOP"]
+    B -->|"Minor Transient"| D["3 Months Minimum<br/>Consider Extension"]
+    B -->|"Cancer"| E["Extended<br/>LMWH or DOAC"]
+    B -->|"APS"| F["Extended<br/>VKA Preferred"]
+    B -->|"Recurrent VTE"| G["Extended<br/>All Guidelines Agree"]
+    B -->|"Unprovoked"| H{"Bleeding<br/>Risk?"}
+    H -->|"Low"| I["Extended AC<br/>Reassess Annually"]
+    I --> J["Reduced Dose Option<br/>Apixaban 2.5mg BD<br/>Rivaroxaban 10mg OD"]
+    H -->|"High"| K["3-6 Months<br/>Consider Aspirin"]
+
+    style C fill:#dcfce7,stroke:#16a34a,stroke-width:2px,color:#166534
+    style E fill:#fef2f2,stroke:#dc2626,stroke-width:2px,color:#991b1b
+    style F fill:#fef2f2,stroke:#dc2626,stroke-width:2px,color:#991b1b
+    style G fill:#fef2f2,stroke:#dc2626,stroke-width:2px,color:#991b1b
+    style I fill:#dbeafe,stroke:#2563eb,stroke-width:2px,color:#1e40af
+    style J fill:#ede9fe,stroke:#7c3aed,stroke-width:2px,color:#5b21b6
+        </div>
+      </div>
+
+      <!-- Algorithm 4: Treatment Selection -->
+      <div class="section-card">
+        <h2 class="font-display text-2xl font-bold mb-1 text-gradient-red">Algorithm 4: Treatment Selection — Massive PE</h2>
+        <p class="text-slate-500 text-sm mb-4">Advanced therapy decision pathway for high-risk PE</p>
+        <div class="mermaid">
+flowchart TD
+    A["MASSIVE PE<br/>Hemodynamic Instability"] --> B["Start UFH<br/>IV Bolus + Infusion"]
+    B --> C{"Contraindication<br/>to Thrombolysis?"}
+    C -->|"No"| D["Systemic Thrombolysis<br/>Alteplase 100mg/2h<br/>or 0.6mg/kg/15min"]
+    D --> E{"Response<br/>Within 36-72h?"}
+    E -->|"Yes"| F["Continue Anticoagulation<br/>Transition to DOAC"]
+    E -->|"No - Failed"| G{"Surgical<br/>Expertise<br/>Available?"}
+    G -->|"Yes"| H["Surgical Embolectomy"]
+    G -->|"No"| I["Catheter-Directed<br/>Intervention (CDI)"]
+    C -->|"Yes"| J{"CDI Available<br/>with Expertise?"}
+    J -->|"Yes"| I
+    J -->|"No"| K{"Surgical<br/>Option?"}
+    K -->|"Yes"| H
+    K -->|"No"| L["ECMO as Bridge<br/>Transfer to Expert Center"]
+    I --> M{"Successful?"}
+    M -->|"Yes"| F
+    M -->|"No"| L
+
+    style A fill:#fef2f2,stroke:#dc2626,stroke-width:3px,color:#991b1b
+    style D fill:#fef3c7,stroke:#d97706,stroke-width:2px,color:#92400e
+    style H fill:#dbeafe,stroke:#2563eb,stroke-width:2px,color:#1e40af
+    style I fill:#ede9fe,stroke:#7c3aed,stroke-width:2px,color:#5b21b6
+    style L fill:#fce7f3,stroke:#db2777,stroke-width:2px,color:#9d174d
+    style F fill:#dcfce7,stroke:#16a34a,stroke-width:2px,color:#166534
+        </div>
+      </div>
+    </div>
+
+    <!-- ===================== ABBREVIATIONS TAB ===================== -->
+    <div id="tab-abbreviations" class="tab-panel hidden fade-in">
+      <div class="section-card">
+        <h2 class="font-display text-2xl font-bold mb-1 text-gradient-red">Abbreviations</h2>
+        <p class="text-slate-500 text-sm mb-4">Complete abbreviation reference from Zuin et al. 2024 and related PE terminology</p>
+
+        <div class="mb-4">
+          <input type="text" id="abbrSearch" placeholder="Search abbreviations..."
+                 class="w-full max-w-md px-4 py-2.5 rounded-xl border-2 text-sm transition-all"
+                 style="background:rgba(255,255,255,0.7);border-color:rgba(0,0,0,0.1);outline:none;color:#1e293b;"
+                 onfocus="this.style.borderColor='#991b1b';this.style.boxShadow='0 0 0 4px rgba(153,27,27,0.1)'"
+                 onblur="this.style.borderColor='rgba(0,0,0,0.1)';this.style.boxShadow='none'">
+        </div>
+
+        <div class="abbr-grid" id="abbrGrid">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+    </div>
+
+  </div><!-- end tabContent -->
+
+  <div class="section-divider"></div>
+
+  <!-- Footer -->
+  <footer class="text-center pb-8">
+    <div class="glass-panel px-6 py-5 inline-block" style="border-top: 3px solid #991b1b; max-width: 800px;">
+      <p class="text-xs mb-3 leading-relaxed" style="color:#64748b;">
+        <strong style="color:#1e293b;">Reference:</strong> Zuin M, Bikdeli B, Ballard-Hernandez J, Barco S, Battinelli EM, Giannakoulas G, Jimenez D, Klok FA, Krishnathasan D, Lang IM, Moores L, Sylvester KW, Weitz JI, Piazza G.
+        <em>International Clinical Practice Guideline Recommendations for Acute Pulmonary Embolism: Harmony, Dissonance, and Silence.</em>
+        J Am Coll Cardiol. 2024;84(16):1561-1577.
+        <a href="https://doi.org/10.1016/j.jacc.2024.07.044" target="_blank" style="color:#1d4ed8;text-decoration:underline;text-underline-offset:2px;">doi:10.1016/j.jacc.2024.07.044</a>
+      </p>
+      <div style="height:1px;background:linear-gradient(90deg,transparent,rgba(153,27,27,0.2),transparent);margin:0 auto 10px;max-width:400px;"></div>
+      <p class="text-xs" style="color:#64748b;">
+        <span class="font-bold" style="color:#991b1b;">#BloodDoctor</span>
+        <span class="mx-2" style="color:#cbd5e1;">|</span>
+        Educational reference — not a substitute for clinical judgment
+        <span class="mx-2" style="color:#cbd5e1;">|</span>
+        <span>&copy; 2024 Dr Abdul Mannan</span>
+      </p>
+    </div>
+  </footer>
+
+</div>
+
+<script>
+// ═══════════════════════════════════════
+// TAB NAVIGATION
+// ═══════════════════════════════════════
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const tab = btn.dataset.tab;
+    document.querySelectorAll('.tab-btn').forEach(b => {
+      b.classList.remove('active');
+    });
+    btn.classList.add('active');
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.add('hidden'));
+    const panel = document.getElementById('tab-' + tab);
+    if(panel) {
+      panel.classList.remove('hidden');
+      panel.classList.add('fade-in');
+      if(tab === 'algorithms') {
+        setTimeout(() => mermaid.run(), 100);
+      }
+    }
+  });
+});
+
+// ═══════════════════════════════════════
+// ABBREVIATIONS DATA
+// ═══════════════════════════════════════
+const abbreviations = [
+  {abbr:"ACS", full:"Acute Coronary Syndrome"},
+  {abbr:"AHA", full:"American Heart Association"},
+  {abbr:"aPTT", full:"Activated Partial Thromboplastin Time"},
+  {abbr:"ASH", full:"American Society of Hematology"},
+  {abbr:"BD", full:"Twice Daily (Bis Die)"},
+  {abbr:"BNP", full:"B-type Natriuretic Peptide"},
+  {abbr:"BP", full:"Blood Pressure"},
+  {abbr:"CDI", full:"Catheter-Directed Intervention"},
+  {abbr:"CDR", full:"Clinical Decision Rule"},
+  {abbr:"CHEST", full:"American College of Chest Physicians (ACCP)"},
+  {abbr:"CrCl", full:"Creatinine Clearance"},
+  {abbr:"CT", full:"Computed Tomography"},
+  {abbr:"CTED", full:"Chronic Thromboembolic Disease"},
+  {abbr:"CTEPH", full:"Chronic Thromboembolic Pulmonary Hypertension"},
+  {abbr:"CTPA", full:"Computed Tomography Pulmonary Angiography"},
+  {abbr:"CUS", full:"Compression Ultrasonography"},
+  {abbr:"DOAC", full:"Direct Oral Anticoagulant"},
+  {abbr:"DVT", full:"Deep Vein Thrombosis"},
+  {abbr:"ECMO", full:"Extracorporeal Membrane Oxygenation"},
+  {abbr:"eGFR", full:"Estimated Glomerular Filtration Rate"},
+  {abbr:"ESC", full:"European Society of Cardiology"},
+  {abbr:"ERS", full:"European Respiratory Society"},
+  {abbr:"GI", full:"Gastrointestinal"},
+  {abbr:"GU", full:"Genitourinary"},
+  {abbr:"HDU", full:"High Dependency Unit"},
+  {abbr:"HIT", full:"Heparin-Induced Thrombocytopenia"},
+  {abbr:"HRT", full:"Hormone Replacement Therapy"},
+  {abbr:"ICU", full:"Intensive Care Unit"},
+  {abbr:"INR", full:"International Normalized Ratio"},
+  {abbr:"IV", full:"Intravenous"},
+  {abbr:"IVC", full:"Inferior Vena Cava"},
+  {abbr:"JACC", full:"Journal of the American College of Cardiology"},
+  {abbr:"LMWH", full:"Low Molecular Weight Heparin"},
+  {abbr:"LV", full:"Left Ventricle"},
+  {abbr:"MDT", full:"Multidisciplinary Team"},
+  {abbr:"NICE", full:"National Institute for Health and Care Excellence"},
+  {abbr:"NT-proBNP", full:"N-terminal pro-B-type Natriuretic Peptide"},
+  {abbr:"OCP", full:"Oral Contraceptive Pill"},
+  {abbr:"OD", full:"Once Daily (Omni Die)"},
+  {abbr:"PE", full:"Pulmonary Embolism"},
+  {abbr:"PERC", full:"Pulmonary Embolism Rule-out Criteria"},
+  {abbr:"PERT", full:"Pulmonary Embolism Response Team"},
+  {abbr:"PESI", full:"Pulmonary Embolism Severity Index"},
+  {abbr:"PTP", full:"Pre-Test Probability"},
+  {abbr:"PTSD", full:"Post-Traumatic Stress Disorder"},
+  {abbr:"RCT", full:"Randomized Controlled Trial"},
+  {abbr:"RV", full:"Right Ventricle / Right Ventricular"},
+  {abbr:"SBP", full:"Systolic Blood Pressure"},
+  {abbr:"sPESI", full:"Simplified Pulmonary Embolism Severity Index"},
+  {abbr:"SPECT", full:"Single Photon Emission Computed Tomography"},
+  {abbr:"TTE", full:"Transthoracic Echocardiography"},
+  {abbr:"UFH", full:"Unfractionated Heparin"},
+  {abbr:"USS", full:"Ultrasound Scan"},
+  {abbr:"VKA", full:"Vitamin K Antagonist"},
+  {abbr:"V/Q", full:"Ventilation/Perfusion (Scan)"},
+  {abbr:"VTE", full:"Venous Thromboembolism"}
+];
+
+function renderAbbreviations(filter = '') {
+  const grid = document.getElementById('abbrGrid');
+  const filtered = filter
+    ? abbreviations.filter(a =>
+        a.abbr.toLowerCase().includes(filter.toLowerCase()) ||
+        a.full.toLowerCase().includes(filter.toLowerCase()))
+    : abbreviations;
+  grid.innerHTML = filtered.map(a => `
+    <div class="abbr-item">
+      <strong>${a.abbr}</strong>
+      <span style="color:#64748b;">${a.full}</span>
+    </div>
+  `).join('');
+}
+
+renderAbbreviations();
+
+document.getElementById('abbrSearch').addEventListener('input', e => {
+  renderAbbreviations(e.target.value);
+});
+
+// ═══════════════════════════════════════
+// MERMAID INIT
+// ═══════════════════════════════════════
+mermaid.initialize({
+  startOnLoad: false,
+  theme: 'base',
+  themeVariables: {
+    primaryColor: '#fef2f2',
+    primaryBorderColor: '#dc2626',
+    primaryTextColor: '#1e293b',
+    lineColor: '#94a3b8',
+    secondaryColor: '#f1f5f9',
+    tertiaryColor: '#fff'
+  },
+  flowchart: {
+    curve: 'basis',
+    padding: 16,
+    htmlLabels: true,
+    useMaxWidth: true
+  },
+  securityLevel: 'loose'
+});
+
+const observer = new MutationObserver(() => {
+  const algTab = document.getElementById('tab-algorithms');
+  if(algTab && !algTab.classList.contains('hidden')) {
+    mermaid.run();
+  }
+});
+observer.observe(document.getElementById('tabContent'), {childList:true,subtree:true,attributes:true});
+</script>
+
+</body>
+</html>
