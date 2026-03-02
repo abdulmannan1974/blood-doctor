@@ -2,7 +2,7 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
 export default defineConfig({
-  base: '/blood-doctor/academic-writer/',
+  base: '/',
   plugins: [react()],
   server: {
     port: 3002,
