@@ -22,11 +22,8 @@
  * Run this after reinstalling kapture-mcp via npx (e.g. after clearing npm cache).
  */
 
-import { execSync } from 'child_process';
-import { readFileSync, writeFileSync, existsSync } from 'fs';
-import { createRequire } from 'module';
-
-const require = createRequire(import.meta.url);
+const { execSync } = require('child_process');
+const { readFileSync, writeFileSync, existsSync } = require('fs');
 
 // Find the kapture-mcp installation
 function findKaptureBridge() {
