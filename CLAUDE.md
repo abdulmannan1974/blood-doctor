@@ -11,10 +11,11 @@
 ```
 blood-doctor/
 ├── projects/
-│   ├── cmml/          # Chronic Myelomonocytic Leukaemia educational app
-│   └── pe/            # Pulmonary Embolism investigation guide app
-├── docs/              # Built assets for GitHub Pages deployment
-└── CLAUDE.md          # This file
+│   ├── cmml/              # Chronic Myelomonocytic Leukaemia educational app
+│   ├── pe/                # Pulmonary Embolism investigation guide app
+│   └── myeloid-sarcoma/   # Myeloid Sarcoma of the Breast — diagnosis & management
+├── docs/                  # Built assets for GitHub Pages deployment
+└── CLAUDE.md              # This file
 ```
 
 Each project under `projects/` is a standalone React SPA with its own `package.json`, `vite.config.ts`, and build setup.
@@ -36,6 +37,9 @@ cd projects/cmml && npm install && npm run dev  # Dev server on port 3000
 
 # PE project
 cd projects/pe && npm install && npm run dev     # Dev server on port 3001
+
+# Myeloid Sarcoma of the Breast project
+cd projects/myeloid-sarcoma && npm install && npm run dev  # Dev server on port 3002
 ```
 
 ## Build & Deployment
@@ -63,11 +67,14 @@ cd projects/pe && npm install && npm run dev     # Dev server on port 3001
 | `projects/cmml/components/HematologyScene.tsx` | 3D blood cell visualization |
 | `projects/pe/App.tsx` | PE main app component |
 | `projects/pe/components/PEInvestigations.tsx` | Investigation guide with calculators |
+| `projects/myeloid-sarcoma/App.tsx` | Myeloid Sarcoma of the Breast main app component |
+| `projects/myeloid-sarcoma/components/MyeloidSarcomaContent.tsx` | Diagnosis, pitfalls, management & references sections |
 
 ## Content Sources
 
 - **CMML:** Based on British Journal of Haematology 2025, Vol. 207, pp. 350-364 (HHU Düsseldorf review)
 - **PE:** Based on ESC/ERS 2019, NICE, and BTS guidelines
+- **Myeloid Sarcoma of the Breast:** Based on peer-reviewed literature (case reports, small series and reviews; e.g. Patkowska 2025, Magdy 2019, Chisholm 2019, Bakst 2011, plus breast-specific cases) — see in-app References section. No breast-specific prospective trials exist; recommendations extrapolate from MS/AML data.
 
 ## Important Notes
 
